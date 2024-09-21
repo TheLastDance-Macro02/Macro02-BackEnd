@@ -11,7 +11,7 @@ func routes(_ app: Application) throws {
     }
     
     app.get("ponde") { req async -> String in
-        "ponde ponde ponde ponde ponde ponde ponde ponde ponde"
+        "bla bla bla bla bla"
     }
 
 //    try app.register(collection: TodoController())
