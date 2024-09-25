@@ -6,5 +6,5 @@ func routes(_ app: Application) throws {
         "Servidor Rodando"
     }
     
-//    try app.register(collection: TodoController())
+    try app.register(collection: OrderController())
 }

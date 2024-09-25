@@ -6,22 +6,25 @@
 //
 
 import Foundation
+#if canImport(Combine)
 import Combine
+#endif
 import Vapor
+
 
 class ApiService: @unchecked Sendable {
     /// Singleton instance
-    static let shared = ApiService()
+    static let shared: ApiService = ApiService()
     
     private let urlSession: URLSession = .shared
     
     private init() { }
     
-    public func fetchData<T: Codable>(url: URL, object: Data? = nil, httpMethod: HttpMethods) throws -> AnyPublisher<T, Error> {
+    public func fetchData<T: Codable>(url: URL, object: Data? = nil, httpMethod: Api.HttpMethods) throws -> AnyPublisher<T, Error> {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = httpMethod.rawValue
         urlRequest.httpBody = object
-        urlRequest.setValue(MIME.jsonAp.rawValue, forHTTPHeaderField: MIME.jsonType.rawValue)
+        urlRequest.setValue(Api.MIME.jsonAp.rawValue, forHTTPHeaderField: Api.MIME.jsonType.rawValue)
         
         return urlSession.dataTaskPublisher(for: urlRequest)
             .tryMap { [weak self] output in

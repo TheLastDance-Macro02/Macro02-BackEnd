@@ -9,30 +9,20 @@ import Foundation
 
 struct Delivery {
     enum Company: String, CaseIterable, Codable {
-        case correios
-        case aliexpress
-        case shopee
-        case mercadoLivre
-        case ups
+        case correios = "correios"
+        case aliexpress = "aliexpress"
+        case shopee = "shopee"
+        case mercadoLivre = "mercado_livre"
+        case ups = "ups"
     }
     
     enum Status: String, CaseIterable, Codable {
-        case pending
-        case inTransit
-        case outForDelivery
-        case delivered
-        case failed
-        case returned
-        case canceled
-    }
-    
-    enum IconProduct: String, CaseIterable, Codable {
-        case phone
-        case shoes
-        case ball
-        case house
-        case book
-        case tools
-        case package
+        case pending = "pending"
+        case inTransit = "in_transit"
+        case outForDelivery = "out_for_delivery"
+        case delivered = "delivered"
+        case failed = "failed"
+        case returned = "returned"
+        case canceled = "canceled"
     }
 }
