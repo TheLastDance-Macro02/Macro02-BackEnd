@@ -62,4 +62,5 @@ class ApiService: @unchecked Sendable {
             throw URLError(.badServerResponse)
         }
     }
+    
 }
