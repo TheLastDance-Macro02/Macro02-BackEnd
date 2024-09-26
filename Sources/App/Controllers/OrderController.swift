@@ -31,19 +31,14 @@ final class OrderController: RouteCollection, @unchecked Sendable{
     func create(req: Request) async throws -> OrderDTO {
         do {
             let order = try req.content.decode(OrderDTO.self).toModel()
-            print(order, " - AQUIIIIIII")
-            
-            let newOrder = Order(id: order.id, isFavorite: order.isFavorite, isFinished: order.isFinished, orderFinishedDate: order.orderFinishedDate)
-            
-            try await newOrder.save(on: req.db)
-            
+            try await order.save(on: req.db)
+        
             return order.toDTO()
         } catch {
             print("Erro ao salvar o pedido: \(String(reflecting: error))")
-            throw error // Opcional: para permitir que o erro suba
+            throw error
         }
     }
-
 }
 
 

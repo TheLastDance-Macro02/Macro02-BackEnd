@@ -19,34 +19,34 @@ final class Order: Model, @unchecked Sendable {
     
     @Field(key: "is_finished")
     var isFinished: Bool
-    
-    @Children(for: \.$order)
-    var products: [Product]
-    
-    @Timestamp(key: "created_at", on: .create)
-    var orderCreatedDate: Date?
-    
-    @Timestamp(key: "finished_at", on: .none)
-    var orderFinishedDate: Date?
+//    
+//    @Children(for: \.$order)
+//    var products: [Product]
+//    
+//    @Timestamp(key: "created_at", on: .create)
+//    var orderCreatedDate: Date?
+//    
+//    @Timestamp(key: "finished_at", on: .none)
+//    var orderFinishedDate: Date?
     
     init() {}
     
     /// Criar instância inicial
-    init(id: UUID? = nil, isFavorite: Bool = false, isFinished: Bool = false, orderFinishedDate: Date? = nil) {
+    init(id: UUID? = nil, isFavorite: Bool = false, isFinished: Bool = false/*, orderFinishedDate: Date? = nil*/) {
         self.id = id
         self.isFavorite = isFavorite
         self.isFinished = isFinished
-        self.orderFinishedDate = orderFinishedDate
+//        self.orderFinishedDate = orderFinishedDate
     }
     
     public func toDTO() -> OrderDTO {
         .init(
             id: id,
-            is_favorite: isFavorite,
-            is_finished: isFinished,
-            orderCreatedAt: orderCreatedDate,
-            orderFinishedAt: orderFinishedDate,
-            products: products.map { $0.toDTO() }
+            isFavorite: isFavorite,
+            isFinished: isFinished
+//            orderCreatedAt: orderCreatedDate,
+//            orderFinishedAt: orderFinishedDate
+//            products: products.map { $0.toDTO() }
         )
     }
 }
