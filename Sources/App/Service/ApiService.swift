@@ -6,12 +6,12 @@
 //
 
 import Foundation
-//import Combine
 import Vapor
+
 
 class ApiService: @unchecked Sendable {
     /// Singleton instance
-    static let shared = ApiService()
+    static let shared: ApiService = ApiService()
     
     private let urlSession: URLSession = .shared
     
