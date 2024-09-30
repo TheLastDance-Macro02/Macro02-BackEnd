@@ -59,7 +59,7 @@ final class Product: Model, @unchecked Sendable {
             name: name,
             code: code,
             isFinished: isFinished,
-//            orderID: $order.id,
+            orderID: $order.id,
             deliveryStatus: deliveryStatus,
             statusHistory: statusHistory.map { $0.toDTO() },
             deliveryCompany: deliveryCompany

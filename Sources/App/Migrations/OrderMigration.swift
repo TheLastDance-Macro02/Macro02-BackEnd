@@ -14,8 +14,8 @@ struct OrderMigration: AsyncMigration {
             .id()
             .field("is_favorite", .bool, .required, .sql(.default(false)))
             .field("is_finished", .bool, .required, .sql(.default(false)))
-//            .field("created_at", .datetime, .required, .sql(.default("CURRENT_TIMESTAMP")))
-//            .field("finished_at", .datetime)
+            .field("created_at", .datetime, .required)
+            .field("finished_at", .datetime)
             .create()
     }
     

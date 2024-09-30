@@ -12,9 +12,9 @@ struct OrderDTO: Content {
     var id: UUID?
     var isFavorite: Bool
     var isFinished: Bool
-//    var orderCreatedAt: Date?
-//    var orderFinishedAt: Date?
-//    var products: [ProductDTO]
+    var orderCreatedAt: Date?
+    var orderFinishedAt: Date?
+    var products: [ProductDTO]
     
     public func toModel() -> Order {
         let model: Order = Order()
@@ -22,9 +22,9 @@ struct OrderDTO: Content {
         model.id = id
         model.isFavorite = isFavorite
         model.isFinished = isFinished
-//        model.orderCreatedDate = orderCreatedAt
-//        model.orderFinishedDate = orderFinishedAt
-//        model.products = products.map { $0.toModel() }
+        model.orderCreatedDate = orderCreatedAt
+        model.orderFinishedDate = orderFinishedAt
+        model.products = products.map { $0.toModel() }
         
         return model
     }
@@ -33,8 +33,8 @@ struct OrderDTO: Content {
        case id
        case isFavorite = "is_favorite"
        case isFinished = "is_finished"
-//       case orderCreatedAt = "orderCreatedDate"
-//       case orderFinishedAt = "orderFinishedDate"
-//       case products
+       case orderCreatedAt = "orderCreatedDate"
+       case orderFinishedAt = "orderFinishedDate"
+       case products
    }
 }

@@ -5,7 +5,8 @@
 //  Created by Gustavo Horestee Santos Barros on 23/09/24.
 //
 
-import Foundation
+import Vapor
+import Fluent
 
 struct Delivery {
     enum Company: String, CaseIterable, Codable {
@@ -24,5 +25,19 @@ struct Delivery {
         case failed = "failed"
         case returned = "returned"
         case canceled = "canceled"
+    }
+}
+
+enum AppController{
+    case createOrder(CreateOrder)
+    
+    func boot(routes: RoutesBuilder){
+        switch self {
+        case .createOrder(let createOrder):
+            routes.get("orders", use: createOrder.getAllOrders)
+            routes.get("orders", "finished", use: createOrder.getAllFinishesOrders)
+            routes.post("orders", use: createOrder.createOrder)
+//            routes.delete("orders", "deleteAllOrders", use: createOrder.deleteAllOrders)//Deltar depois 
+        }
     }
 }
