@@ -6,9 +6,6 @@
 //
 
 import Foundation
-#if canImport(Combine)
-import Combine
-#endif
 import Vapor
 
 
@@ -20,21 +17,44 @@ class ApiService: @unchecked Sendable {
     
     private init() { }
     
-    public func fetchData<T: Codable>(url: URL, object: Data? = nil, httpMethod: Api.HttpMethods) throws -> AnyPublisher<T, Error> {
+    public func fetchData<T: Decodable>(url: URL, object: Data? = nil, httpMethod: HTTPMethod, completion: @escaping (Result<T, URLError>) -> Void) {
+        
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = httpMethod.rawValue
-        urlRequest.httpBody = object
-        urlRequest.setValue(Api.MIME.jsonAp.rawValue, forHTTPHeaderField: Api.MIME.jsonType.rawValue)
+        urlRequest.httpBody = object.map(\.self)
+        urlRequest.setValue(MIME.jsonAp.rawValue, forHTTPHeaderField: MIME.jsonAp.rawValue)
         
-        return urlSession.dataTaskPublisher(for: urlRequest)
-            .tryMap { [weak self] output in
-                try self?.checkResponse(output.response)
-                return output.data
+        let task = urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
+            
+            if let error = error {
+                completion(.failure(error as! URLError))
+                return
             }
-            .decode(type: T.self, decoder: JSONDecoder())
-            .receive(on: DispatchQueue.main)
-            .eraseToAnyPublisher()
+            
+            do {
+                try self?.checkResponse(response!)
+                
+                guard let data else {
+                    completion(.failure(URLError(.badServerResponse)))
+                    return
+                }
+                
+                let decodedObject = try JSONDecoder().decode(T.self, from: data)
+                DispatchQueue.main.async {
+                    completion(.success(decodedObject))
+                }
+            } catch {
+                DispatchQueue.main.async {
+                    completion(.failure(error as! URLError))
+                }
+            }
+        }
+        task.resume()
+        
+        
     }
+    
+    
     
     /// Verifica a resposta da chamada à API.
     private func checkResponse(_ response: URLResponse) throws {
@@ -42,4 +62,5 @@ class ApiService: @unchecked Sendable {
             throw URLError(.badServerResponse)
         }
     }
+    
 }
