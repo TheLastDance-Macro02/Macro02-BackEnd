@@ -147,24 +147,77 @@ struct CreateOrder {
             }
             .first()!
         
+        let tokem = try await requestTokemCorreios(req: req)
         
-        for product in loadRelationships.products {
-            let _ = try await apiService.fetchData(url: URL(string: "bla")!, object: Data(), httpMethod: .POST, model: CorreiosModel.self)
-            //logica de atualizar pedido aqui
-        }
+        let codigosObjetos = ["AC128351367BR", "AC128351367BR", "AC128351367BR", "AC128351367BR"]
+        let queryCodigos = codigosObjetos.map { "codigosObjetos=\($0)" }.joined(separator: "&")
         
-//        for await product in loadRelationships.products{
-            //        let status = CorreiosAPI.shared.fetchData(code: order.)
-//        }
-//        print("Aqui - ", loadRelationships.products)
+        try await requestStatusCorreios(req: req, urlString: "AC128351367BR", tokem: tokem)
         
         
         return loadRelationships.toDTO()
-        
-
     }
     
     
+    private func requestTokemCorreios(req: Request) async throws -> Correios.Tokem {
+        let response = try await req.client.post("https://api.correios.com.br/token/v1/autentica/cartaopostagem"){ req in
+            req.headers.add(name: "Content-Type", value: "application/json")
+            try req.content.encode(["numero":"0078781167"])
+            req.headers.basicAuthorization = BasicAuthorization(username: "03731011000130", password: "CfI4wFFJOimCvlLZ4siY4EJOHEqLecjEflDdjfmF")
+        }
+        return try response.content.decode(Correios.Tokem.self)
+    }
+    
+    ///"https://api.correios.com.br/srorastro/v1/objetos/\(code)?resultado=T" -> Um produto
+    ///"https://api.correios.com.br/srorastro/v1/objetos?\(code)&resultado=T"  -> Varios produtos Array
+    private func requestStatusCorreios(req: Request, urlString: String, tokem: Correios.Tokem) async throws {
+        let response = try await req.client.get("\(urlString)"){ req in
+            req.headers.add(name: "Accept", value: "application/json")
+            req.headers.add(name: "Authorization", value: "Bearer \(tokem.token)")
+        }
+        let json = try response.content.decode(Correios.Welcome.self)
+        printWelcomeModel(json)
+    }
+    
+    func printWelcomeModel(_ welcome: Correios.Welcome) {
+        print("Objetos:")
+        for (index, objeto) in welcome.objetos.enumerated() {
+            print("  Objeto \(index + 1):")
+            print("    Código: \(objeto.codObjeto)")
+            print("    Tipo Postal:")
+            print("      Categoria: \(objeto.tipoPostal.categoria)")
+            print("    Data Prevista: \(objeto.dtPrevista)")
+            print("    Eventos:")
+            for (eventIndex, evento) in objeto.eventos.enumerated() {
+                print("      Evento \(eventIndex + 1):")
+                print("        Data/Hora: \(evento.dtHrCriado)")
+                print("        Descrição: \(evento.descricao)")
+                if let detalhe = evento.detalhe {
+                    print("        Detalhe: \(detalhe)")
+                }
+                print("        Unidade:")
+                print("          Tipo: \(evento.unidade.tipo)")
+                print("          Endereço:")
+                print("            Cidade: \(evento.unidade.endereco.cidade)")
+                if let cep = evento.unidade.endereco.cep {
+                    print("            CEP: \(cep)")
+                }
+                if let logradouro = evento.unidade.endereco.logradouro {
+                    print("            Logradouro: \(logradouro)")
+                }
+                if let complemento = evento.unidade.endereco.complemento {
+                    print("            Complemento: \(complemento)")
+                }
+                if let numero = evento.unidade.endereco.numero {
+                    print("            Número: \(numero)")
+                }
+                if let bairro = evento.unidade.endereco.bairro {
+                    print("            Bairro: \(bairro)")
+                }
+            }
+            print() 
+        }
+    }
     
     //MARK: - Save data in model order
     private func saveOrder(req: Request, orderDTO: OrderDTO) async throws -> Order {
