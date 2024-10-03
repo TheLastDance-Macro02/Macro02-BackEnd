@@ -38,9 +38,9 @@ struct ProductDTO: Content {
         case name
         case code
         case isFinished = "is_finished"
-        case orderID = "order_id"        // Mapeia a chave order_id para orderID
-        case deliveryStatus = "delivery_status" // Mapeia a chave delivery_status
-        case deliveryCompany = "delivery_company" // Mapeia a chave delivery_company
+        case orderID = "order_id"
+        case deliveryStatus = "delivery_status"
+        case deliveryCompany = "delivery_company"
         case statusHistory = "status_history"
     }
 }

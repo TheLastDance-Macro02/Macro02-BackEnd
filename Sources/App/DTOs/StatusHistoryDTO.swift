@@ -29,7 +29,7 @@ struct StatusHistoryDTO: Content {
     enum CodingKeys: String, CodingKey {
         case id
         case history
-        case historyDate = "history_date" // Mapeia a chave history_date
-        case productId = "product_id"      // Mapeia a chave product_id
+        case historyDate = "history_date"
+        case productId = "product_id"      
     }
 }

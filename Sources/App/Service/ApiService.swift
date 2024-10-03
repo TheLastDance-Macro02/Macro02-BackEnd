@@ -17,41 +17,15 @@ class ApiService: @unchecked Sendable {
     
     private init() { }
     
-    public func fetchData<T: Decodable>(url: URL, object: Data? = nil, httpMethod: HTTPMethod, completion: @escaping (Result<T, URLError>) -> Void) {
-        
+    public func fetchData<T: Codable>(url: URL, object: Data? = nil, httpMethod: HTTPMethod, model: T.Type) async throws -> T {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = httpMethod.rawValue
         urlRequest.httpBody = object.map(\.self)
-        urlRequest.setValue(MIME.jsonAp.rawValue, forHTTPHeaderField: MIME.jsonAp.rawValue)
-        
-        let task = urlSession.dataTask(with: urlRequest) { [weak self] data, response, error in
-            
-            if let error = error {
-                completion(.failure(error as! URLError))
-                return
-            }
-            
-            do {
-                try self?.checkResponse(response!)
-                
-                guard let data else {
-                    completion(.failure(URLError(.badServerResponse)))
-                    return
-                }
-                
-                let decodedObject = try JSONDecoder().decode(T.self, from: data)
-                DispatchQueue.main.async {
-                    completion(.success(decodedObject))
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    completion(.failure(error as! URLError))
-                }
-            }
-        }
-        task.resume()
-        
-        
+        urlRequest.setValue(Api.MIME.jsonAp.rawValue, forHTTPHeaderField: Api.MIME.jsonAp.rawValue)
+    
+        let (data, response) = try await urlSession.data(for: urlRequest)
+        try checkResponse(response)
+        return try JSONDecoder().decode(T.self, from: data)
     }
     
     

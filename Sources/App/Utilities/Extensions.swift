@@ -8,16 +8,7 @@
 import Fluent
 import Foundation
 
-struct Api {
-    enum HttpMethods: String{
-        case POST, PUT, DELETE, GET
-    }
 
-    enum MIME: String{
-        case jsonAp = "application/json"
-        case jsonType = "Content-Type"
-    }
-}
 
 
 struct EnumHelper {
