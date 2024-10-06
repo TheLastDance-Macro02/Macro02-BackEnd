@@ -17,6 +17,20 @@ enum Correios{
         let token: String
     }
     
+
+    enum ErrorHandler {
+        struct Error: Codable {
+            let versao: String
+            let quantidade: Int
+            let objetos: [Objeto]
+            let tipoResultado: String
+        }
+
+        struct Objeto: Codable {
+            let mensagem: String?
+        }
+    }
+    
     struct Welcome: Codable {
         let objetos: [Objeto] //Sim
     }

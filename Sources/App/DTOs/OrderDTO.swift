@@ -38,3 +38,8 @@ struct OrderDTO: Content {
        case products
    }
 }
+
+struct CodeAndName: Content {
+    var code: String
+    var name: String
+}

@@ -39,6 +39,15 @@ struct Api {
     }
 }
 
+enum OrderError: Error {
+    case notFound
+    case invalidCode
+    case invalidCodeInCorreiosStandard
+    case codeExistsInDatabase
+    case invalidStatus
+    case notExistCodes
+}
+
 enum AppController{
     case createOrder(CreateOrder)
     
@@ -51,7 +60,7 @@ enum AppController{
             routes.get("orders", "getSumaryOrdersFinished", use: createOrder.getSumaryOrdersFinished)
             routes.get("orders", ":id", use: createOrder.getEspecificOrder)
             routes.post("orders", use: createOrder.createOrder)
-            routes.put("orders", "status", ":id", use: createOrder.verifyOrderStatus)
+            routes.get("orders", "status", use: createOrder.verifyStatusOrders)
             routes.delete("orders", "deleteAllOrders", use: createOrder.deleteAllOrders)//Deltar depois
         }
     }

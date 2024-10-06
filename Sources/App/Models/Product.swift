@@ -26,24 +26,21 @@ final class Product: Model, @unchecked Sendable {
     @Parent(key: "order_id")
     var order: Order
     
-//    @OptionalEnum(key: "delivery_status")
-//    var deliveryStatus: Delivery.Status?
-//    
-//    @OptionalEnum(key: "delivery_company")
-//    var deliveryCompany: Delivery.Company?
-    
     @OptionalField(key: "delivery_status")
     var deliveryStatus: String?
     
     @OptionalField(key: "delivery_company")
     var deliveryCompany: String?
     
-    @Children(for: \.$product)
+    @OptionalField(key: "dt_predicted")
+    var dtPredicted: Date?
+    
+    @Children(for: \StatusHistory.$product)
     var statusHistory: [StatusHistory]
     
     init() {}
     
-    init(id: UUID? = nil, name: String, code: String, isFinished: Bool = false, orderID: Order.IDValue, deliveryStatus: String?, deliveryCompany: String?) {
+    init(id: UUID? = nil, name: String, code: String, isFinished: Bool = false, orderID: Order.IDValue, deliveryStatus: String? = nil, deliveryCompany: String? = nil, dtPredicted: Date? = nil) {
         self.id = id
         self.name = name
         self.code = code
@@ -51,8 +48,11 @@ final class Product: Model, @unchecked Sendable {
         self.$order.id = orderID
         self.deliveryStatus = deliveryStatus
         self.deliveryCompany = deliveryCompany
+        self.dtPredicted = dtPredicted
     }
-    
+}
+
+extension Product{
     public func toDTO() -> ProductDTO {
         .init(
             id: id,
@@ -62,7 +62,8 @@ final class Product: Model, @unchecked Sendable {
             orderID: $order.id,
             deliveryStatus: deliveryStatus,
             statusHistory: statusHistory.map { $0.toDTO() },
-            deliveryCompany: deliveryCompany
+            deliveryCompany: deliveryCompany,
+            dtPredicted: dtPredicted
         )
     }
 }
