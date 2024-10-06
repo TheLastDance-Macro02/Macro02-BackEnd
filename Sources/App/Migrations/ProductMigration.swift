@@ -9,9 +9,6 @@ import Fluent
 
 struct ProductMigration: AsyncMigration {
     func prepare(on database: Database) async throws {
-//       let status = try await EnumHelper.createDeliveryStatusEnum(on: database)
-//       let company = try await EnumHelper.createCompanyEnum(on: database)
-        
         try await database.schema(Product.schema)
             .id()
             .field("name", .string, .required)
@@ -20,14 +17,12 @@ struct ProductMigration: AsyncMigration {
             .field("order_id", .uuid, .references(Order.schema, "id", onDelete: .cascade))
             .field("delivery_status", .string)
             .field("delivery_company", .string)
+            .field("dt_predicted", .datetime)  // Adicionando o campo de data prevista
             .create()
     }
     
     func revert(on database: Database) async throws {
         try await database.schema(Product.schema).delete()
-        
-//        try await database.enum("delivery_company").delete()
-//        try await database.enum("delivery_status").delete()
     }
 }
 
