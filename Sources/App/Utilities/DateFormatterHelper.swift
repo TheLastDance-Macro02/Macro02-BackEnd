@@ -12,7 +12,7 @@ extension String {
     /// Converte uma string no formato ISO 8601 para uma data
     func toISO8601Date() -> Date? {
         let isoFormatter = ISO8601DateFormatter()
-        // Tenta converter a string para uma data
+        isoFormatter.formatOptions = [.withFullDate, .withTime, .withDashSeparatorInDate, .withColonSeparatorInTime]
         return isoFormatter.date(from: self)
     }
 }

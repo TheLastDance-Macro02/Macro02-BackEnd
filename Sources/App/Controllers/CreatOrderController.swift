@@ -184,7 +184,17 @@ struct CreateOrder {
                 product.deliveryCompany = objetos.tipoPostal.categoria
                 product.dtPredicted = objetos.dtPrevista.toISO8601Date()
                 for evento in objetos.eventos {
-                    try await saveStatusHistory(productID: product.id!, req: req, event: evento)
+                    let exists = try await StatusHistory.query(on: req.db)
+                    .filter(\StatusHistory.$product.$id == product.id!)
+                    .filter(\.$dtCreated == evento.dtHrCriado.toISO8601Date())
+                    .first()
+
+                    // Se não existir, insere o novo status
+                    if exists == nil {
+                        try await saveStatusHistory(productID: product.id!, req: req, event: evento)
+                    } else {
+                        print("Evento já existe para o produto \(product.id!)")
+                    }
                 }
                 try await product.save(on: req.db)
             }
@@ -293,87 +303,4 @@ struct CreateOrder {
                 product.with(\.$statusHistory)
             }
     }
-    
-    func printWelcomeModel(_ welcome: Correios.Welcome) {
-        print("Objetos:")
-        for (index, objeto) in welcome.objetos.enumerated() {
-            print("  Objeto \(index + 1):")
-            print("    Código: \(objeto.codObjeto)")
-            print("    Tipo Postal:")
-            print("      Categoria: \(objeto.tipoPostal.categoria)")
-            print("    Data Prevista: \(objeto.dtPrevista)")
-            print("    Eventos:")
-            for (eventIndex, evento) in objeto.eventos.enumerated() {
-                print("      Evento \(eventIndex + 1):")
-                print("        Data/Hora: \(evento.dtHrCriado)")
-                print("        Descrição: \(evento.descricao)")
-                if let detalhe = evento.detalhe {
-                    print("        Detalhe: \(detalhe)")
-                }
-                print("        Unidade:")
-                print("          Tipo: \(evento.unidade.tipo)")
-                print("          Endereço:")
-                print("            Cidade: \(evento.unidade.endereco.cidade)")
-                if let cep = evento.unidade.endereco.cep {
-                    print("            CEP: \(cep)")
-                }
-                if let logradouro = evento.unidade.endereco.logradouro {
-                    print("            Logradouro: \(logradouro)")
-                }
-                if let complemento = evento.unidade.endereco.complemento {
-                    print("            Complemento: \(complemento)")
-                }
-                if let numero = evento.unidade.endereco.numero {
-                    print("            Número: \(numero)")
-                }
-                if let bairro = evento.unidade.endereco.bairro {
-                    print("            Bairro: \(bairro)")
-                }
-            }
-            print()
-        }
-    }
 }
-
-
-/*
- func printWelcomeModel(_ welcome: Correios.Welcome) {
-     print("Objetos:")
-     for (index, objeto) in welcome.objetos.enumerated() {
-         print("  Objeto \(index + 1):")
-         print("    Código: \(objeto.codObjeto)")
-         print("    Tipo Postal:")
-         print("      Categoria: \(objeto.tipoPostal.categoria)")
-         print("    Data Prevista: \(objeto.dtPrevista)")
-         print("    Eventos:")
-         for (eventIndex, evento) in objeto.eventos.enumerated() {
-             print("      Evento \(eventIndex + 1):")
-             print("        Data/Hora: \(evento.dtHrCriado)")
-             print("        Descrição: \(evento.descricao)")
-             if let detalhe = evento.detalhe {
-                 print("        Detalhe: \(detalhe)")
-             }
-             print("        Unidade:")
-             print("          Tipo: \(evento.unidade.tipo)")
-             print("          Endereço:")
-             print("            Cidade: \(evento.unidade.endereco.cidade)")
-             if let cep = evento.unidade.endereco.cep {
-                 print("            CEP: \(cep)")
-             }
-             if let logradouro = evento.unidade.endereco.logradouro {
-                 print("            Logradouro: \(logradouro)")
-             }
-             if let complemento = evento.unidade.endereco.complemento {
-                 print("            Complemento: \(complemento)")
-             }
-             if let numero = evento.unidade.endereco.numero {
-                 print("            Número: \(numero)")
-             }
-             if let bairro = evento.unidade.endereco.bairro {
-                 print("            Bairro: \(bairro)")
-             }
-         }
-         print()
-     }
- }
- */
