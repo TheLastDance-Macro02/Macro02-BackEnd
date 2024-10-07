@@ -28,6 +28,26 @@ struct Delivery {
     }
 }
 
+struct Api {
+    enum HttpMethods: String{
+        case POST, PUT, DELETE, GET
+    }
+
+    enum MIME: String{
+        case jsonAp = "application/json"
+        case jsonType = "Content-Type"
+    }
+}
+
+enum OrderError: Error {
+    case notFound
+    case invalidCode
+    case invalidCodeInCorreiosStandard
+    case codeExistsInDatabase
+    case invalidStatus
+    case notExistCodes
+}
+
 enum AppController{
     case createOrder(CreateOrder)
     
@@ -36,8 +56,14 @@ enum AppController{
         case .createOrder(let createOrder):
             routes.get("orders", use: createOrder.getAllOrders)
             routes.get("orders", "finished", use: createOrder.getAllFinishesOrders)
+            routes.get("orders", "getSumaryOrders", use: createOrder.getSumaryOrders)
+            routes.get("orders", "getSumaryOrdersFinished", use: createOrder.getSumaryOrdersFinished)
+            routes.get("orders", ":id", use: createOrder.getEspecificOrder)
             routes.post("orders", use: createOrder.createOrder)
-//            routes.delete("orders", "deleteAllOrders", use: createOrder.deleteAllOrders)//Deltar depois 
+            routes.get("orders", "status", use: createOrder.verifyStatusOrders)
+            routes.delete("orders", "deleteAllOrders", use: createOrder.deleteAllOrders)//Deltar depois
         }
     }
 }
+
+

@@ -17,6 +17,7 @@ struct ProductDTO: Content {
     var deliveryStatus: String?
     var statusHistory: [StatusHistoryDTO]
     var deliveryCompany: String?
+    var dtPredicted: Date?
     
     public func toModel() -> Product {
         let model = Product()
@@ -29,18 +30,18 @@ struct ProductDTO: Content {
         model.deliveryStatus = deliveryStatus
         model.statusHistory = statusHistory.map { $0.toModel() }
         model.deliveryCompany = deliveryCompany
+        model.dtPredicted = dtPredicted
         
         return model
     }
     
     enum CodingKeys: String, CodingKey {
-        case id
-        case name
-        case code
+        case id, code, name
         case isFinished = "is_finished"
-        case orderID = "order_id"        // Mapeia a chave order_id para orderID
-        case deliveryStatus = "delivery_status" // Mapeia a chave delivery_status
-        case deliveryCompany = "delivery_company" // Mapeia a chave delivery_company
+        case orderID = "order_id"
+        case deliveryStatus = "delivery_status"
+        case deliveryCompany = "delivery_company"
         case statusHistory = "status_history"
+        case dtPredicted = "dt_predicted"
     }
 }
