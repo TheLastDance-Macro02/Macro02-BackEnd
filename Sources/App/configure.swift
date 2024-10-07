@@ -32,7 +32,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(ProductMigration())
     app.migrations.add(StatusHistoryMigration())
     
-    app.http.client.configuration.redirectConfiguration = .disallow
+//    app.http.client.configuration.redirectConfiguration = .disallow
     
     if app.environment == .development {
         try await app.autoMigrate()
