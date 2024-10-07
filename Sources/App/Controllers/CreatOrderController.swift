@@ -128,11 +128,8 @@ struct CreateOrder {
     
     func verifyCode(code: String, req: Request) async throws {
         let regex = "^[A-Z]{2}\\d{9}[A-Z]{2}$"
-            
-        let isValid = NSPredicate(format: "SELF MATCHES %@", regex).evaluate(with: code)
-        guard isValid else {
-            throw OrderError.invalidCodeInCorreiosStandard
-        }
+           
+       let isValid = code.range(of: regex, options: .regularExpression) != nil
         
         let exists = try await Product.query(on: req.db)
             .filter(\.$code == code)
