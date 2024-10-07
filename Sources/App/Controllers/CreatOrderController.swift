@@ -273,9 +273,7 @@ struct CreateOrder {
     private func saveStatusHistory(productID: Product.IDValue, req: Request, event: Correios.Evento? = nil) async throws {
         /// Salva o histórico de status associado a um produto no banco de dados.
 
-        // Cria uma nova instância de StatusHistory
         let newStatusHistory = StatusHistory(
-//            history: event?.descricao,
             historyDate: event?.dtHrCriado ?? Date().toISO8601String(),
             productID: productID,
             description: event?.descricao,
