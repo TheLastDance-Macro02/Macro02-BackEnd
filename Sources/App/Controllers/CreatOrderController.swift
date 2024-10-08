@@ -129,7 +129,7 @@ struct CreateOrder {
     func verifyCode(code: String, req: Request) async throws {
         let regex = "^[A-Z]{2}\\d{9}[A-Z]{2}$"
            
-       let isValid = code.range(of: regex, options: .regularExpression) != nil
+        let isValid = code.range(of: regex, options: .regularExpression) != nil
         
         let exists = try await Product.query(on: req.db)
             .filter(\.$code == code)
@@ -178,12 +178,13 @@ struct CreateOrder {
             
             let products = try await order.$products.get(on: req.db)
             for product in products {
-                product.deliveryCompany = objetos.tipoPostal.categoria
-                product.dtPredicted = objetos.dtPrevista.toISO8601Date()
+                product.deliveryCompany = objetos.tipoPostal?.categoria
+                product.dtPredicted = objetos.dtPrevista?.toISO8601Date() ?? nil
+                
                 for evento in objetos.eventos {
                     let exists = try await StatusHistory.query(on: req.db)
                     .filter(\StatusHistory.$product.$id == product.id!)
-                    .filter(\.$dtCreated == evento.dtHrCriado.toISO8601Date())
+                    .filter(\.$dtCreated == evento.dtHrCriado?.toISO8601Date())
                     .first()
 
                     // Se não existir, insere o novo status
@@ -278,13 +279,13 @@ struct CreateOrder {
             productID: productID,
             description: event?.descricao,
             detail: event?.detalhe,
-            typeLocation: event?.unidade.tipo,
-            city: event?.unidade.endereco.cidade,
-            cep: event?.unidade.endereco.cep,
-            street: event?.unidade.endereco.logradouro,
-            number: event?.unidade.endereco.numero,
-            complement: event?.unidade.endereco.complemento,
-            district: event?.unidade.endereco.bairro
+            typeLocation: event?.unidade?.tipo,
+            city: event?.unidade?.endereco.cidade,
+            cep: event?.unidade?.endereco.cep,
+            street: event?.unidade?.endereco.logradouro,
+            number: event?.unidade?.endereco.numero,
+            complement: event?.unidade?.endereco.complemento,
+            district: event?.unidade?.endereco.bairro
         )
 
         // Salva a nova entrada de StatusHistory no banco de dados
