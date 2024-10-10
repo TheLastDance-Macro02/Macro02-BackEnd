@@ -11,7 +11,6 @@ import Vapor
 
 struct StatusHistoryDTO: Content {
     var id: UUID?
-//    var history: String?
     var dtCreated: Date?
     var productId: Product.IDValue?
     var description: String?
@@ -29,7 +28,6 @@ struct StatusHistoryDTO: Content {
         let model = StatusHistory()
         
         model.id = id
-//        model.history = history
         model.dtCreated = dtCreated
         model.$product.id = productId!
         model.description = description

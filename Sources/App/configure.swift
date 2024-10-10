@@ -3,10 +3,7 @@ import Fluent
 import FluentPostgresDriver
 import Vapor
 
-// configures your application
 public func configure(_ app: Application) async throws {
-    // uncomment to serve files from /Public folder
-    // app.middleware.use(FileMiddleware(publicDirectory: app.directory.publicDirectory))
     
     if let databaseURL = Environment.get("DATABASE_URL") {
         var tlsConfig: TLSConfiguration = .makeClientConfiguration()
@@ -31,12 +28,13 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(OrderMigration())
     app.migrations.add(ProductMigration())
     app.migrations.add(StatusHistoryMigration())
+    app.migrations.add(UserMigration())
     
-//    app.http.client.configuration.redirectConfiguration = .disallow
     
     if app.environment == .development {
         try await app.autoMigrate()
     }
 
+    
     try routes(app)
 }

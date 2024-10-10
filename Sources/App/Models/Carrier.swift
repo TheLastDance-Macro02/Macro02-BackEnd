@@ -14,8 +14,8 @@ final class Carrier: Model, @unchecked Sendable {
     @ID(key: .id)
     var id: UUID?
     
-    @Enum(key: "delivery_name")
-    var deliveryName: Delivery.Company
+//    @Enum(key: "delivery_name")
+//    var deliveryName: Delivery.Company
     
     @Field(key: "amount_votes")
     var amountVotes: Int
@@ -28,15 +28,15 @@ final class Carrier: Model, @unchecked Sendable {
     
     init() {}
     
-    init(id: UUID? = nil, deliveryName: Delivery.Company, amountVotes: Int = 0, ratingHistory: [Double], rating: Double? = nil) {
+    init(id: UUID? = nil/*, deliveryName: Delivery.Company*/, amountVotes: Int = 0, ratingHistory: [Double], rating: Double? = nil) {
         self.id = id
-        self.deliveryName = deliveryName
+//        self.deliveryName = deliveryName
         self.amountVotes = amountVotes
         self.ratingHistory = ratingHistory
         self.rating = rating
     }
     
     public func toDTO() -> CarrierDTO {
-        .init(id: id, deliveryName: deliveryName, amountVotes: amountVotes, ratingHistory: ratingHistory, rating: rating)
+        .init(id: id/*, deliveryName: deliveryName*/, amountVotes: amountVotes, ratingHistory: ratingHistory, rating: rating)
     }
 }

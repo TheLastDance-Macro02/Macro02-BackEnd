@@ -38,7 +38,9 @@ final class Order: Model, @unchecked Sendable {
         self.isFinished = isFinished
         self.orderFinishedDate = orderFinishedDate
     }
-    
+}
+
+extension Order{
     public func toDTO() -> OrderDTO {
         .init(
             id: id,

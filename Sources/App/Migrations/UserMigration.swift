@@ -1,0 +1,35 @@
+//
+//  UserMigration.swift
+//  backEnd_Macro
+//
+//  Created by Gustavo Horestee Santos Barros on 09/10/24.
+//
+
+import Fluent
+
+struct UserMigration: AsyncMigration {
+    func prepare(on database: Database) async throws {
+        try await database.schema(User.schema)
+            .id()
+            .field("name", .string, .required)
+            .field("email", .string, .required)
+            .field("password", .string, .required)
+            .field("created_at", .datetime)
+            .field("sex", .string)
+            .field("date_of_birth", .datetime)
+            .field("location", .string)
+            .field("unity_type_location", .string)
+            .field("unity_city", .string)
+            .field("unity_cep", .string)
+            .field("unity_street", .string)
+            .field("unity_number", .string)
+            .field("unity_complement", .string)
+            .field("unity_district", .string)
+            .unique(on: "email")
+            .create()
+    }
+    
+    func revert(on database: Database) async throws {
+        try await database.schema(User.schema).delete()
+    }
+}
