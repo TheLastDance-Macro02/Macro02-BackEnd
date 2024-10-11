@@ -12,7 +12,7 @@ import Vapor
 final class User: Model, @unchecked Sendable {
     static let schema: String = "user"
     
-    @Field(key: .id)
+    @ID(key: .id)
     var id: UUID?
     
     @Field(key: "name")
@@ -27,8 +27,11 @@ final class User: Model, @unchecked Sendable {
     @Field(key: "created_at")
     var createdAt: Date?
     
-    @OptionalField(key: "sex")
-    var sex: String?
+    @OptionalField(key: "phone_number")
+    var phoneNumber: String?
+    
+    @OptionalField(key: "gender")
+    var gender: String?
     
     @OptionalField(key: "date_of_birth")
     var dateOfBirth: Date?
@@ -45,7 +48,8 @@ final class User: Model, @unchecked Sendable {
          name: String,
          email: String,
          password: String,
-         sex: String? = nil,
+         phoneNumber: String? = nil,
+         gender: String? = nil,
          dateOfBirth: Date? = nil,
          location: String? = nil,
          createdAt: Date,
@@ -58,10 +62,11 @@ final class User: Model, @unchecked Sendable {
          district: String? = nil) {
         
         self.id = id
+        self.phoneNumber = phoneNumber
         self.name = name
         self.email = email
         self.password = password
-        self.sex = sex
+        self.gender = gender
         self.dateOfBirth = dateOfBirth
         self.locationCoordinator = location
         self.createdAt = createdAt
@@ -83,7 +88,8 @@ extension User {
             name: name,
             email: email,
             password: password,
-            sex: sex,
+            phoneNumber: phoneNumber,
+            gender: gender,
             dateOfBirth: dateOfBirth,
             locationCoordinator: locationCoordinator,
             createdAt: createdAt,
@@ -106,9 +112,12 @@ extension User {
     }
 }
 
-//extension User: AsyncMiddleware {
-//    func respond(to request: Request, chainingTo next: AsyncResponder) async throws -> Response {
-//        
-//    }
-//}
+extension User: ModelAuthenticatable {
+    static let usernameKey = \User.$email
+    static let passwordHashKey = \User.$password
+    
+    func verify(password: String) throws -> Bool {
+        try Bcrypt.verify(password, created: self.password)
+    }
+}
 

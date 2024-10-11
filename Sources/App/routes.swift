@@ -11,6 +11,11 @@ func routes(_ app: Application) throws {
         "Servidor Rodando"
     }
     
-    App.Controller.createOrder(createOrder).boot(routes: app.routes)
+    let basicAuthMiddleware = User.authenticator()
+    let guardAuthMiddleware = User.guardMiddleware()
+    
+    let protectedOrderRoutes = app.grouped(basicAuthMiddleware, guardAuthMiddleware)
+    
+    App.Controller.createOrder(createOrder).boot(routes: protectedOrderRoutes)
     App.Controller.createUser(createUser).boot(routes: app.routes)
 }

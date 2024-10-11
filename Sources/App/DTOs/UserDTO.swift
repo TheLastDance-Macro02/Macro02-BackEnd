@@ -13,7 +13,8 @@ struct UserDTO: Content {
     var name: String
     var email: String
     var password: String?
-    var sex: String?
+    var phoneNumber: String?
+    var gender: String?
     var dateOfBirth: Date?
     var locationCoordinator: String?
     var createdAt: Date?
@@ -32,7 +33,8 @@ struct UserDTO: Content {
             name: name,
             email: email,
             password: password!,
-            sex: sex,
+            phoneNumber: phoneNumber!,
+            gender: gender,
             dateOfBirth: dateOfBirth,
             location: locationCoordinator,
             createdAt: createdAt!,
@@ -51,11 +53,12 @@ struct UserDTO: Content {
         case name
         case email
         case password
-        case sex
+        case gender
         case dateOfBirth = "date_of_birth"
         case locationCoordinator = "location"
         case createdAt = "created_at"
         case typeLocation = "type_location"
+        case phoneNumber = "phone_number"
         case city
         case cep
         case street
