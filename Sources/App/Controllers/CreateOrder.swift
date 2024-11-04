@@ -19,14 +19,18 @@ struct CreateOrder: @unchecked Sendable {
     
     @Sendable
     func getAllOrders(req: Request) async throws -> [OrderDTO] {
-        ///Obtém todas as ordens, mapeando-as para DTOs.
+        /// Obtém todas as ordens do usuário autenticado, mapeando-as para DTOs.
         do {
-            return try await modelService.loadRelationshipValues(req: req)
+            let user = try modelService.getAuthenticatedUserID(req)
+            
+            let orders = try await modelService.loadRelationshipValues(req: req)
+                .filter(\Order.$user.$id == user)
                 .all()
-                .map { $0.toDTO() }
+            
+            return orders.map { $0.toDTO() }
+            
         } catch {
-            print("ERROR - getAllOrders: \(String(reflecting: error))")
-            throw error
+            throw Abort(.internalServerError, reason: "Failed in getting all orders.")
         }
     }
     
@@ -35,20 +39,35 @@ struct CreateOrder: @unchecked Sendable {
         guard let id = req.parameters.get("id", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Order ID is missing or invalid.")
         }
-        guard let order = try await Order.find(id, on: req.db) else {
-            throw Abort(.badRequest, reason: "Missing order ID.")
+        
+        let userID = try modelService.getAuthenticatedUserID(req)
+        
+        guard let order = try await Order.query(on: req.db)
+                .filter(\.$id == id)
+                .filter(\.$user.$id == userID)
+                .first() else {
+            throw Abort(.badRequest, reason: "Order not found or doesn't belong to the user.")
         }
+        
         try await order.delete(on: req.db)
         return .ok
     }
+    
+    
     
     @Sendable
     func updateEspecifiqueOrder(req: Request) async throws -> HTTPStatus {
         guard let id = req.parameters.get("id", as: UUID.self) else {
             throw Abort(.badRequest, reason: "Order ID is missing or invalid.")
         }
-        guard let order = try await Order.find(id, on: req.db) else {
-            throw Abort(.badRequest, reason: "Missing order ID.")
+        
+        let userID = try modelService.getAuthenticatedUserID(req)
+        
+        guard let order = try await Order.query(on: req.db)
+                .filter(\.$id == id)
+                .filter(\.$user.$id == userID)  
+                .first() else {
+            throw Abort(.badRequest, reason: "Order not found or doesn't belong to the user.")
         }
         
         order.isFinished = true
@@ -60,7 +79,7 @@ struct CreateOrder: @unchecked Sendable {
     func createOrder(req: Request) async throws -> OrderDTO {
         ///Cria uma nova ordem, salva os produtos e retorna a ordem criada com os produtos e histórico.
         let codeAndName = try req.content.decode(CodeAndName.self)
-        try await verifyCodeInAllCarriers(code: codeAndName.code, req: req)
+        try await verifyCodeInAllCarriers(codeAndName: codeAndName, req: req)
         let newOrder = try await modelService.saveOrder(req: req)
         try await modelService.saveProducts(orderID: newOrder.id!, req: req, codeAndName: codeAndName)
         return try await Order.query(on: req.db)
@@ -72,8 +91,28 @@ struct CreateOrder: @unchecked Sendable {
             .toDTO()
     }
     
-    private func verifyCodeInAllCarriers(code: String, req: Request) async throws {
-        try await correiosService.verifyCode(code: code, req: req)
+    private func verifyCodeInAllCarriers(codeAndName: CodeAndName, req: Request) async throws {
+        try await correiosService.verifyCode(code: codeAndName.code, req: req)
+        
+//        let carrier = Api.Carriers.from(string: codeAndName.carrier)
+//        switch carrier {
+//        case .Correios:
+//            
+//        case .Fedex:
+//            print("Chamando Fedex")
+//        case .Aliexpress:
+//            print("Chamando Aliexpress")
+//        case .Amazon:
+//            print("Chamando Amazon")
+//        case .DHL:
+//            print("Chamando DHL")
+//        case .MercadoLivre:
+//            print("Chamando MercadoLivre")
+//        case .UPS:
+//            print("Chamando UPS")
+//        case nil:
+//            print("Deu nill")
+//        }
     }
     
     @Sendable
@@ -85,19 +124,25 @@ struct CreateOrder: @unchecked Sendable {
     
     @Sendable
     func verifyStatusOrders(req: Request) async throws -> [OrderDTO] {
-        ///Verifica o status das ordens e atualiza com base nas informações dos Correios.
-        let orders = try await modelService.loadRelationshipValues(req: req).all()
+        let userID = try modelService.getAuthenticatedUserID(req)
+        
+        let orders = try await modelService.loadRelationshipValues(req: req)
+            .filter(\Order.$user.$id == userID)
+            .all()
+        
         guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
-        print("Aqui: ", orders.first?.products.first?.code as Any)
+        
         let urlString = try await correiosService.makeURl(from: orders)
-        if urlString.contains("ERROR"){
-            return try await modelService.loadRelationshipValues(req: req)
-                .all()
-                .map { $0.toDTO() }
+        if urlString.contains("ERROR") {
+            return orders.map { $0.toDTO() }
         }
+        
         let responseCorreios = try await correiosService.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
-        try await modelService.updateOrdersStatus(req: req, status: responseCorreios)
+        
+        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        
         return try await modelService.loadRelationshipValues(req: req)
+            .filter(\Order.$user.$id == userID)  
             .all()
             .map { $0.toDTO() }
     }

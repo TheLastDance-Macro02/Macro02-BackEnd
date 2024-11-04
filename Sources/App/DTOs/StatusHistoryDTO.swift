@@ -32,7 +32,7 @@ struct StatusHistoryDTO: Content {
         model.$product.id = productId!
         model.description = description
         model.detail = detail
-
+        
         model.unity.typeLocation = typeLocation
         model.unity.city = city
         model.unity.cep = cep
@@ -40,7 +40,7 @@ struct StatusHistoryDTO: Content {
         model.unity.number = number
         model.unity.complement = complement
         model.unity.district = district
-
+        
         return model
     }
     

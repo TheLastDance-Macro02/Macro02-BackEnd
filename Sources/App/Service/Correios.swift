@@ -17,7 +17,7 @@ class CorreiosService: ApiService{
     
     func makeURl(from orders: [Order]) async throws -> String{
         let filteredProductCodes = orders.filter { !$0.isFinished }.flatMap { $0.products.map { $0.code } }
-        if filteredProductCodes.count > 50 { return "" } ///Iso vai da bo se o cara dastrar mais de 50 produtos 😀
+        if filteredProductCodes.count > 50 { return "" } ///Iso vai da bo se o cara cadastrar mais de 50 produtos 😀
         let queryCodigos = filteredProductCodes.map { "codigosObjetos=\($0)" }.joined(separator: "&")
         if queryCodigos.isEmpty { return "ERROR" }
         return "https://api.correios.com.br/srorastro/v1/objetos?\(queryCodigos)&resultado=T"
@@ -51,7 +51,12 @@ class CorreiosService: ApiService{
             throw Api.OrderError.invalidCode
         }
         
+        let user = try req.auth.require(User.self)
+        let userID = try user.requireID()
+
         let exists = try await Product.query(on: req.db)
+            .join(Order.self, on: \Product.$order.$id == \Order.$id)
+            .filter(Order.self, \Order.$user.$id == userID)
             .filter(\.$code == code)
             .first() != nil
         

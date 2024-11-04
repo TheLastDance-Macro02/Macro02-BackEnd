@@ -9,15 +9,6 @@ import Vapor
 import Fluent
 
 struct Api {
-    enum HttpMethods: String{
-        case POST, PUT, DELETE, GET
-    }
-
-    enum MIME: String{
-        case jsonAp = "application/json"
-        case jsonType = "Content-Type"
-    }
-    
     enum OrderError: Error {
         case notFound
         case invalidCode
@@ -41,6 +32,20 @@ struct Api {
             case .notExistCodes:
                 return "Não existem códigos disponíveis."
             }
+        }
+    }
+    
+    enum Carriers: String {
+        case Correios
+        case Fedex
+        case Aliexpress
+        case Amazon
+        case DHL
+        case MercadoLivre = "mercadolivre"
+        case UPS = "ups"
+        
+        static func from(string: String) -> Carriers? {
+            return Carriers(rawValue: string)
         }
     }
 }

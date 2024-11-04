@@ -11,7 +11,8 @@ import Vapor
 final class ModelService {
     public func saveOrder(req: Request) async throws -> Order {
         /// Salva uma nova ordem no banco de dados.
-        let newOrder = Order()
+        let userID = try req.auth.require(User.self).requireID()
+        let newOrder = Order(orderID: userID)
         try await newOrder.save(on: req.db)
         return newOrder
     }
@@ -48,7 +49,7 @@ final class ModelService {
         try await newStatusHistory.save(on: req.db)
     }
     
-    public func updateOrdersStatus(req: Request, status: Correios.Welcome) async throws {
+    public func updateOrdersStatusCorreios(req: Request, status: Correios.Welcome) async throws {
         ///Atualiza o status de todas as ordens de acordo com as informações recebidas dos Correios.
         for objeto in status.objetos {
             guard let order = try await findOrderByCode(req: req, code: objeto.codObjeto) else {
@@ -64,45 +65,15 @@ final class ModelService {
         }
     }
     
-//    public func upadateOrdersStatus(req: Request, status: Correios.Welcome) async throws {
-//        for objetos in status.objetos {
-//            let order = try await loadRelationshipValues(req: req)
-//                .join(Product.self, on: \Product.$order.$id == \Order.$id)
-//                .filter(Product.self, \.$code == objetos.codObjeto)
-//                .filter(Order.self, \Order.$isFinished == false)
-//                .first()
-//            
-//            guard let order = order else { throw Api.OrderError.notFound }
-//            
-//            let products = try await order.$products.get(on: req.db)
-//            for product in products {
-//                product.deliveryCompany = objetos.tipoPostal?.categoria
-//                product.dtPredicted = objetos.dtPrevista?.toISO8601Date()
-//                for evento in objetos.eventos {
-//                    let exists = try await StatusHistory.query(on: req.db)
-//                    .filter(\StatusHistory.$product.$id == product.id!)
-//                    .filter(\.$dtCreated == evento.dtHrCriado?.toISO8601Date())
-//                    .first()
-//
-//                    // Se não existir, insere o novo status
-//                    if exists == nil {
-//                        try await saveStatusHistory(productID: product.id!, req: req, event: evento)
-//                    } else {
-//                        print("Evento já existe para o produto \(product.id!)")
-//                    }
-//                }
-//                try await product.save(on: req.db)
-//            }
-//            try await order.save(on: req.db)
-//        }
-//    }
     
     private func findOrderByCode(req: Request, code: String) async throws -> Order? {
-        ///Encontra a ordem pelo código do produto, se ainda não estiver finalizada.
+        let userID = try getAuthenticatedUserID(req)
+
         return try await loadRelationshipValues(req: req)
             .join(Product.self, on: \Product.$order.$id == \Order.$id)
             .filter(Product.self, \.$code == code)
             .filter(Order.self, \Order.$isFinished == false)
+            .filter(Order.self, \.$user.$id == userID) 
             .first()
     }
     
@@ -141,8 +112,21 @@ final class ModelService {
             }
     }
     
-    public func creatUser(req: Request, user: User) async throws -> User{
+    public func creatUser(req: Request, user: UserRecive) async throws -> User{
+        if !user.password.elementsEqual(user.passwordConfirmation){
+            throw Abort(.conflict, reason: "As senhas não conferem")
+        }
+        
+        if let existingUser = try await User.query(on: req.db).filter(\.$email == user.email).first() {
+            throw Abort(.conflict, reason: "O e-mail já está cadastrado")
+        }
+        
         let userEncryptedPassoword = try Bcrypt.hash(user.password)
         return User(name: user.name, email: user.email, password: userEncryptedPassoword, createdAt: Date.now)
+    }
+    
+    
+    public func getAuthenticatedUserID(_ req: Request) throws -> UUID {
+        return try req.auth.require(User.self).requireID()
     }
 }

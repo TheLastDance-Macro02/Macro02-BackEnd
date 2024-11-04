@@ -11,11 +11,14 @@ func routes(_ app: Application) throws {
         "Servidor Rodando"
     }
     
+    //Autenticar user
     let basicAuthMiddleware = User.authenticator()
-    let guardAuthMiddleware = User.guardMiddleware()
+    let protectedUserRoutes = app.grouped(basicAuthMiddleware)
     
-    let protectedOrderRoutes = app.grouped(basicAuthMiddleware, guardAuthMiddleware)
+    //Autenticar order
+    let tokenAuthMiddleware = Tokem.authenticator()
+    let protectedOrderRoutes = app.grouped(tokenAuthMiddleware, basicAuthMiddleware)
     
+    App.Controller.createUser(createUser).boot(routes: protectedUserRoutes)
     App.Controller.createOrder(createOrder).boot(routes: protectedOrderRoutes)
-    App.Controller.createUser(createUser).boot(routes: app.routes)
 }

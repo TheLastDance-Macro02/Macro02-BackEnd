@@ -22,6 +22,9 @@ final class Order: Model, @unchecked Sendable {
  
     @Children(for: \.$order)
     var products: [Product]
+    
+    @Parent(key: "user_id")
+    var user: User
    
     @Timestamp(key: "created_at", on: .create)
     var orderCreatedDate: Date?
@@ -32,11 +35,12 @@ final class Order: Model, @unchecked Sendable {
     init() {}
     
     /// Criar instância inicial
-    init(id: UUID? = nil, isFavorite: Bool = false, isFinished: Bool = false, orderFinishedDate: Date? = nil) {
+    init(id: UUID? = nil, isFavorite: Bool = false, isFinished: Bool = false, orderFinishedDate: Date? = nil, orderID: Order.IDValue) {
         self.id = id
         self.isFavorite = isFavorite
         self.isFinished = isFinished
         self.orderFinishedDate = orderFinishedDate
+        self.$user.id = orderID
     }
 }
 

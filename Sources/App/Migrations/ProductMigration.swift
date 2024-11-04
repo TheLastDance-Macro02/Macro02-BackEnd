@@ -17,7 +17,8 @@ struct ProductMigration: AsyncMigration {
             .field("order_id", .uuid, .references(Order.schema, "id", onDelete: .cascade))
             .field("delivery_status", .string)
             .field("delivery_company", .string)
-            .field("dt_predicted", .datetime)  
+            .field("dt_predicted", .datetime)
+//            .unique(on: "code")
             .create()
     }
     

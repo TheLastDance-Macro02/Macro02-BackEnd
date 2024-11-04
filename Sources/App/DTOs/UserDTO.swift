@@ -13,6 +13,7 @@ struct UserDTO: Content {
     var name: String
     var email: String
     var password: String?
+    var passwordConfirmation: String?
     var phoneNumber: String?
     var gender: String?
     var dateOfBirth: Date?
@@ -26,6 +27,8 @@ struct UserDTO: Content {
     var number: String?
     var complement: String?
     var district: String?
+
+    var tokemDTO: TokemDTO?
     
     public func toModel() -> User {
         return User(
@@ -67,4 +70,36 @@ struct UserDTO: Content {
         case district
     }
 }
+
+struct UserRecive: Content {
+    let email: String
+    let name: String
+    let password: String
+    let passwordConfirmation: String
+}
+
+extension UserRecive: Validatable{
+    static func validations(_ validations: inout Vapor.Validations) {
+        validations.add(
+            "email",
+            as: String.self,
+            is: .email
+        )
+        validations.add(
+            "name",
+            as: String.self,
+            is: !.empty && .count(3..<250) && .alphanumeric,
+            customFailureDescription: "Provided username is invalid!"
+        )
+    }
+}
+
+extension ValidatorResults {
+    public struct PasswordMatch {
+        public let areEqual: Bool
+    }
+}
+
+
+
 

@@ -42,4 +42,5 @@ struct OrderDTO: Content {
 struct CodeAndName: Content {
     var code: String
     var name: String
+//    var carrier: String
 }

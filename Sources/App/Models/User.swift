@@ -27,6 +27,9 @@ final class User: Model, @unchecked Sendable {
     @Field(key: "created_at")
     var createdAt: Date?
     
+    @Children(for: \.$user)
+    var orders: [Order]
+    
     @OptionalField(key: "phone_number")
     var phoneNumber: String?
     
@@ -102,14 +105,6 @@ extension User {
             district: unity.district
         )
     }
-    
-    public func toPublicDTO() -> UserDTO {
-        return .init(
-            id: id,
-            name: name,
-            email: email
-        )
-    }
 }
 
 extension User: ModelAuthenticatable {
@@ -120,4 +115,18 @@ extension User: ModelAuthenticatable {
         try Bcrypt.verify(password, created: self.password)
     }
 }
+
+extension User {
+    public func toPublicDTO() -> UserDTO {
+        
+        return .init(
+            id: id,
+            name: name,
+            email: email
+        )
+    }
+}
+
+
+
 

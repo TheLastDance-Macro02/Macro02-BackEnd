@@ -16,6 +16,7 @@ struct OrderMigration: AsyncMigration {
             .field("is_finished", .bool, .required, .sql(.default(false)))
             .field("created_at", .datetime, .required)
             .field("finished_at", .datetime)
+            .field("user_id", .uuid, .required, .references(User.schema, "id", onDelete: .cascade))
             .create()
     }
     
