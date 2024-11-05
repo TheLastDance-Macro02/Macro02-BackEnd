@@ -82,6 +82,10 @@ struct CreateOrder: @unchecked Sendable {
         try await verifyCodeInAllCarriers(codeAndName: codeAndName, req: req)
         let newOrder = try await modelService.saveOrder(req: req)
         try await modelService.saveProducts(orderID: newOrder.id!, req: req, codeAndName: codeAndName)
+        
+        let responseCorreios = try await correiosService.requestData(req: req, urlString: "https://api.correios.com.br/srorastro/v1/objetos/\(codeAndName.code)?resultado=T", modelType: Correios.Welcome.self)
+        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        
         return try await Order.query(on: req.db)
             .filter(\.$id == newOrder.id!)
             .with(\.$products) { product in
@@ -93,7 +97,6 @@ struct CreateOrder: @unchecked Sendable {
     
     private func verifyCodeInAllCarriers(codeAndName: CodeAndName, req: Request) async throws {
         try await correiosService.verifyCode(code: codeAndName.code, req: req)
-        
 //        let carrier = Api.Carriers.from(string: codeAndName.carrier)
 //        switch carrier {
 //        case .Correios:
