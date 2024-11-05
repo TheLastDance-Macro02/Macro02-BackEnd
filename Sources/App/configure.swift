@@ -28,6 +28,15 @@ public func configure(_ app: Application) async throws {
             postgresConfig.coreConfiguration.tls = .require(nioSSLContext)
 
             app.databases.use(.postgres(configuration: postgresConfig), as: .psql)
+        }else {
+            app.databases.use(DatabaseConfigurationFactory.postgres(configuration: .init(
+                hostname: Environment.get("DATABASE_HOST") ?? "localhost",
+                port: Environment.get("DATABASE_PORT").flatMap(Int.init(_:)) ?? SQLPostgresConfiguration.ianaPortNumber,
+                username: Environment.get("admin_username") ?? "vapor_username",
+                password: Environment.get("12345678") ?? "vapor_password",
+                database: Environment.get("macro_database") ?? "vapor_database",
+                tls: .prefer(try .init(configuration: .clientDefault)))
+            ), as: .psql)
         }
 //    }
 //Comentario de teste .....
@@ -69,7 +78,6 @@ public func configure(_ app: Application) async throws {
     }
       
     await app.jwt.keys.add(hmac: "secret", digestAlgorithm: .sha256)
-    
     app.jwt.apple.applicationIdentifier = "app.hermes.TLD-FrontEnd"
     
     try routes(app)
