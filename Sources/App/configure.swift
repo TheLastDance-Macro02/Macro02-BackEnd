@@ -30,7 +30,7 @@ public func configure(_ app: Application) async throws {
             app.databases.use(.postgres(configuration: postgresConfig), as: .psql)
         }
 //    }
-
+//Comentario de teste .....
 //    let privateKey: String = """
 //                -----BEGIN PRIVATE KEY-----
 //                MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgzHHuODiKS0+g1IQC
