@@ -7,7 +7,7 @@ import JWT
 import VaporAPNS
 import APNSCore
 public func configure(_ app: Application) async throws {
-    let keys = JWTKeyCollection()
+//    let keys = JWTKeyCollection()
     
     if app.environment == .development {
         app.databases.use(DatabaseConfigurationFactory.postgres(configuration: .init(
@@ -81,7 +81,7 @@ public func configure(_ app: Application) async throws {
     }
       
     await app.jwt.keys.add(hmac: "secret", digestAlgorithm: .sha256)
-    app.jwt.apple.applicationIdentifier = "app.hermes.TLD-FrontEnd"
+    app.jwt.apple.applicationIdentifier = "app.TLD-FrontEnd"
     
     try routes(app)
 }
