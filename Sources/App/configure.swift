@@ -38,8 +38,9 @@ public func configure(_ app: Application) async throws {
                 tls: .prefer(try .init(configuration: .clientDefault)))
             ), as: .psql)
         }
+    
 //    }
-//Comentario de teste .....
+//Comentario de teste .....DNV.....
 //    let privateKey: String = """
 //                -----BEGIN PRIVATE KEY-----
 //                MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgzHHuODiKS0+g1IQC
