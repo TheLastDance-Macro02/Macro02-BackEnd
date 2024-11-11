@@ -14,6 +14,7 @@ import Fluent
 ///"https://api.correios.com.br/srorastro/v1/objetos?\(code)&resultado=T"  -> Requisitar varios produtos: [Codes]
 ///"https://api.correios.com.br/token/v1/autentica/cartaopostagem" -> Resquisitar tokem de acesso
 class CorreiosService: ApiService{
+
     
     func makeURl(from orders: [Order]) async throws -> String{
         let filteredProductCodes = orders.filter { !$0.isFinished }.flatMap { $0.products.map { $0.code } }
@@ -69,5 +70,22 @@ class CorreiosService: ApiService{
         if response.objetos.contains(where: { $0.mensagem == "SRO-020: Objeto não encontrado na base de dados dos Correios." }) {
             throw Api.OrderError.invalidCode
         }
+    }
+    
+    public func verifyAllStatus(req: Request, modelService: ModelService, userID: UUID) async throws {
+        let orders = try await modelService.loadRelationshipValues(req: req)
+            .filter(\Order.$user.$id == userID)
+            .all()
+        
+        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
+        
+        let urlString = try await self.makeURl(from: orders)
+        
+        if urlString.contains("ERROR") {
+            return orders.map { $0.toDTO() }
+        }
+        
+        let responseCorreios = try await self.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
+        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
     }
 }

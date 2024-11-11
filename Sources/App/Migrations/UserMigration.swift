@@ -29,8 +29,27 @@ struct UserMigration: AsyncMigration {
             .unique(on: "email")
             .create()
     }
+
     
     func revert(on database: Database) async throws {
         try await database.schema(User.schema).delete()
+    }
+}
+
+struct AddFieldsToUser: AsyncMigration {
+    func prepare(on database: Database) async throws {
+        try await database.schema(User.schema)
+            .field("device_token", .string)
+            .field("send_notification", .bool)
+            .field("user_image", .data)
+            .update()
+    }
+
+    func revert(on database: Database) async throws {
+        try await database.schema(User.schema)
+            .deleteField("device_token")
+            .deleteField("send_notification")
+            .deleteField("user_image")
+            .update()
     }
 }

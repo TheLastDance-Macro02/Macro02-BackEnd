@@ -20,7 +20,9 @@ let package = Package(
         
         .package(url: "https://github.com/vapor/jwt.git", from: "5.0.0"),
         
-        .package(url: "https://github.com/vapor/apns.git", from: "4.0.0")
+        .package(url: "https://github.com/vapor/apns.git", from: "4.0.0"),
+        
+        .package(url: "https://github.com/vapor/queues-redis-driver.git", from: "1.0.0")
     ],
     targets: [
         .executableTarget(
@@ -33,7 +35,8 @@ let package = Package(
                 .product(name: "NIOPosix", package: "swift-nio"),
                 .product(name: "JWTKit", package: "jwt-kit"),
                 .product(name: "JWT", package: "jwt"),
-                .product(name: "VaporAPNS", package: "apns")
+                .product(name: "VaporAPNS", package: "apns"),
+                .product(name: "QueuesRedisDriver", package: "queues-redis-driver")
             ],
             swiftSettings: swiftSettings
         ),

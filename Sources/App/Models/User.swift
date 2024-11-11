@@ -44,6 +44,15 @@ final class User: Model, @unchecked Sendable {
     
     @Group(key: "unity")
     var unity: Unity
+    
+    @OptionalField(key: "device_token")
+    var deviceToken: String?
+    
+    @OptionalField(key: "send_notification")
+    var sendNotification: Bool?
+    
+    @OptionalField(key: "user_image")
+    var userImage: Date?
 
     init() { }
     
@@ -62,7 +71,9 @@ final class User: Model, @unchecked Sendable {
          street: String? = nil,
          number: String? = nil,
          complement: String? = nil,
-         district: String? = nil) {
+         district: String? = nil,
+         deviceToken: String? = nil,
+         userImage: Date? = nil) {
         
         self.id = id
         self.phoneNumber = phoneNumber
@@ -73,6 +84,9 @@ final class User: Model, @unchecked Sendable {
         self.dateOfBirth = dateOfBirth
         self.locationCoordinator = location
         self.createdAt = createdAt
+        self.deviceToken = deviceToken
+        self.sendNotification = true
+        self.userImage = userImage
         
         self.unity.typeLocation = typeLocation
         self.unity.city = city

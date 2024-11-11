@@ -1,66 +1,20 @@
 //
-//  CreateUser.swift
+//  CreateUser 2.swift
 //  backEnd_Macro
 //
-//  Created by Gustavo Horestee Santos Barros on 09/10/24.
+//  Created by Gustavo Horestee Santos Barros on 07/11/24.
 //
+
 
 import Vapor
 import Fluent
 //import JWTKit
 
-struct CreateUser: @unchecked Sendable{
+struct CreateUserToken: @unchecked Sendable{
     private let modelService: ModelService
     
     init (){
         self.modelService = ModelService()
-    }
-    
-    @Sendable
-    func createUser(req: Request) async throws -> UserDTO{
-        let user = try req.content.decode(UserRecive.self)
-        let newUser = try await modelService.creatUser(req: req, user: user)
-        try await newUser.save(on: req.db)
-        return newUser.toPublicDTO()
-    }
-    
-    
-    @Sendable
-    func loginHandler(req: Request) async throws -> TokemDTO {
-        let user = try req.auth.require(User.self)
-        
-        guard let userId = user.id else {
-            throw Abort(.internalServerError, reason: "ID do usuário não encontrado")
-        }
-        
-        if let existingUser = try await User.find(userId, on: req.db) {
-            if let existingToken = try await Tokem.query(on: req.db)
-                .filter(\.$userID.$id == existingUser.id!)
-                .with(\.$userID)
-                .first() {
-                return existingToken.toDTO()
-            }
-            
-            let newToken = try Tokem.generateToken(for: existingUser)
-            try await newToken.save(on: req.db)
-            return newToken.toDTO()
-        }
-        
-        throw Abort(.internalServerError, reason: "Usuário autenticado não encontrado no banco de dados")
-    }
-    
-    @Sendable
-    func allUsers(req: Request) async throws -> [UserDTO] {
-        try await User.query(on: req.db).all().map {
-            $0.toPublicDTO()
-        }
-    }
-    
-    @Sendable
-    func allTokens(req: Request) async throws -> [TokemDTO] {
-        try await Tokem.query(on: req.db).all().map {
-            $0.toDTO()
-        }
     }
     
     @Sendable
@@ -107,4 +61,11 @@ struct CreateUser: @unchecked Sendable{
         print("Retornando Tokem: ", userToken.tokemValue)
         return userToken.toDTO()
     }
+    
+//    @Sendable
+//    func addTokenDevice(req: Request) async throws -> HTTPStatus{
+//        let userID = try req.auth.require(User.self).requireID()
+//        print("UserID: \(userID)")
+//        return .ok
+//    }
 }

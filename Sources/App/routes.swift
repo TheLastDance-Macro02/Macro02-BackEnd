@@ -6,6 +6,7 @@ import Vapor
 func routes(_ app: Application) throws {
     let createOrder = CreateOrder()
     let createUser = CreateUser()
+    let createUserApple = CreateUserToken()
     
     app.get { req async in
         "Servidor Rodando"
@@ -20,5 +21,6 @@ func routes(_ app: Application) throws {
     let protectedOrderRoutes = app.grouped(tokenAuthMiddleware, basicAuthMiddleware)
     
     App.Controller.createUser(createUser).boot(routes: protectedUserRoutes)
+    App.Controller.createUserApple(createUserApple).boot(routes: app.routes)
     App.Controller.createOrder(createOrder).boot(routes: protectedOrderRoutes)
 }

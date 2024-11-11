@@ -95,6 +95,8 @@ struct CreateOrder: @unchecked Sendable {
             .toDTO()
     }
     
+    
+    
     private func verifyCodeInAllCarriers(codeAndName: CodeAndName, req: Request) async throws {
         try await correiosService.verifyCode(code: codeAndName.code, req: req)
 //        let carrier = Api.Carriers.from(string: codeAndName.carrier)
@@ -129,20 +131,20 @@ struct CreateOrder: @unchecked Sendable {
     func verifyStatusOrders(req: Request) async throws -> [OrderDTO] {
         let userID = try modelService.getAuthenticatedUserID(req)
         
-        let orders = try await modelService.loadRelationshipValues(req: req)
-            .filter(\Order.$user.$id == userID)
-            .all()
-        
-        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
-        
-        let urlString = try await correiosService.makeURl(from: orders)
-        if urlString.contains("ERROR") {
-            return orders.map { $0.toDTO() }
-        }
-        
-        let responseCorreios = try await correiosService.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
-        
-        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        try await self.correiosService.verifyAllStatus(req: req, modelService: modelService, userID: userID)
+//        let orders = try await modelService.loadRelationshipValues(req: req)
+//            .filter(\Order.$user.$id == userID)
+//            .all()
+//        
+//        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
+//        
+//        let urlString = try await correiosService.makeURl(from: orders)
+//        if urlString.contains("ERROR") {
+//            return orders.map { $0.toDTO() }
+//        }
+//        
+//        let responseCorreios = try await correiosService.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
+//        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
         
         return try await modelService.loadRelationshipValues(req: req)
             .filter(\Order.$user.$id == userID)  
@@ -150,7 +152,50 @@ struct CreateOrder: @unchecked Sendable {
             .map { $0.toDTO() }
     }
     
-//    private func requestCodeInAllApi(req: Request, orders: [Order]) async throws -> Order{
-//        
-//    }
+    
+    //Isso nao deve ficar aqui kkkkkkkk, vai ficar pq ja to no modo se foda.
+    @Sendable
+    func addTokenDevice(req: Request) async throws -> HTTPStatus{
+        let user = try req.auth.require(User.self)
+        let deviceToken = try req.content.decode(DeviceToken.self)
+        
+        user.deviceToken = deviceToken.deviceToken
+        
+        do{
+            try await user.save(on: req.db)
+        }catch{
+            return .badRequest
+        }
+        
+        return .ok
+    }
+    
+    @Sendable
+    func sendNotification(req: Request) async throws -> HTTPStatus{
+        let user = try req.auth.require(User.self)
+       
+        if user.sendNotification == nil{
+            user.sendNotification = true
+        }
+        
+//        user.sendNotification = user.t
+        
+        do{
+            try await user.save(on: req.db)
+        }catch{
+            return .badRequest
+        }
+        
+        return .ok
+    }
+    
+    @Sendable
+    func deleteAllUsers(req: Request) async throws -> HTTPStatus{
+        try await User.query(on: req.db).delete()
+        return .ok
+    }
+}
+
+struct DeviceToken: Content{
+    let deviceToken: String
 }
