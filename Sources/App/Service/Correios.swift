@@ -72,7 +72,7 @@ class CorreiosService: ApiService{
         }
     }
     
-    public func verifyAllStatus(req: Request, modelService: ModelService, userID: UUID) async throws {
+    public func verifyAllStatus(req: Request, modelService: ModelService, userID: UUID) async throws{
         let orders = try await modelService.loadRelationshipValues(req: req)
             .filter(\Order.$user.$id == userID)
             .all()
@@ -82,10 +82,11 @@ class CorreiosService: ApiService{
         let urlString = try await self.makeURl(from: orders)
         
         if urlString.contains("ERROR") {
-            return orders.map { $0.toDTO() }
+//            return orders.map { $0.toDTO() }
+            throw Abort(.internalServerError, reason: "Erro ao fazer a requisição")
         }
         
         let responseCorreios = try await self.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
-        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios, userUUID: userID)
     }
 }

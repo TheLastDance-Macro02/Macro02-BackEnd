@@ -37,7 +37,7 @@ struct NotificationController: @unchecked Sendable{
         print("USER: \(String(describing: user.id)) - \(user.name) - \(String(describing: user.sendNotification)) - \(String(describing: user.deviceToken))")
         if user.sendNotification == true {
             if let deviceToken = user.deviceToken {
-                try await sendNotificationUser(context: context, deviceToken: deviceToken)
+                try await verifyStatus(user: user, context: context, deviceToken: deviceToken)
             } else {
                 print("User \(user.name) does not have a device token.")
             }
@@ -46,11 +46,11 @@ struct NotificationController: @unchecked Sendable{
         }
     }
     
-    private func sendNotificationUser(context: QueueContext, deviceToken: String) async throws {
+    private func sendNotificationUser(context: QueueContext, deviceToken: String, user: User, mensgem: String) async throws {
         let alert = APNSAlertNotification(
             alert: .init(
-                title: .raw("⚠️ Atenção: Mudança no Status"),
-                subtitle: .raw("This is a test message.")
+                title: .raw("🔔 Status do Pedido"),
+                subtitle: .raw(mensgem)
             ),
             expiration: .immediately,
             priority: .immediately,
@@ -58,23 +58,68 @@ struct NotificationController: @unchecked Sendable{
             payload: Payload(acme1: "1", acme2: 2)
         )
         
-        print("ENVIANDO")
+        print("ENVIANDO - \(user.name)")
         try await context.application.apns.client.sendAlertNotification(
             alert,
             deviceToken: deviceToken
         )
     }
     
-    private func verifyStatus(user: User, context: QueueContext) async throws {
+
+    private func verifyStatus(user: User, context: QueueContext, deviceToken: String) async throws {
         let fakeRequest = Request(application: context.application, on: context.application.eventLoopGroup.next())
-        let orderDTO = try await self.correiosService.verifyAllStatus(req: fakeRequest, modelService: self.modelService, userID: user.requireID())
-        print(orderDTO)
+        
+        let lastOrders = try await modelService.loadRelationshipValues(req: fakeRequest)
+            .filter(\Order.$user.$id == user.requireID())
+            .all()
+        
+        try await self.correiosService.verifyAllStatus(req: fakeRequest, modelService: self.modelService, userID: user.requireID())
+        
+        let newOrders = try await modelService.loadRelationshipValues(req: fakeRequest)
+            .filter(\Order.$user.$id == user.requireID())
+            .all()
+        
+        let updatedOrders = newOrders.compactMap { newOrder -> Order? in
+            guard let oldOrder = lastOrders.first(where: { $0.id == newOrder.id }) else {
+                return nil
+            }
+            
+            let updatedProducts = newOrder.products.compactMap { newProduct -> Product? in
+                guard let oldProduct = oldOrder.products.first(where: { $0.id == newProduct.id }) else {
+                    return nil
+                }
+                
+                if oldProduct.deliveryStatus != newProduct.deliveryStatus {
+                    return newProduct
+                }
+                return nil
+            }
+            
+            if !updatedProducts.isEmpty {
+                let modifiedOrder = newOrder
+                modifiedOrder.products = updatedProducts
+                return modifiedOrder
+            }
+            return nil
+        }
+        
+        if !updatedOrders.isEmpty{
+            for order in updatedOrders {
+                for product in order.products {
+                    let mensagem = "Produto \(product.name) teve mudança de status para: \(product.deliveryStatus ?? "Sem status")"
+                    try await sendNotificationUser(context: context, deviceToken: deviceToken, user: user, mensgem: mensagem)
+                    print(mensagem)
+                }
+            }
+        }else{
+            try await sendNotificationUser(context: context, deviceToken: deviceToken, user: user, mensgem: "Seu pedido está a caminho! Notificaremos qualquer atualização importante.")
+        }
     }
+
     
     private func createMockRequest(context: QueueContext) -> Request {
         let eventLoop = context.application.eventLoopGroup.next()
         let request = Request(application: context.application, on: eventLoop)
-        // Adicione headers, client, ou outros detalhes se necessário
         return request
     }
 }

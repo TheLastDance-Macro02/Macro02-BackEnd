@@ -49,10 +49,10 @@ final class ModelService {
         try await newStatusHistory.save(on: req.db)
     }
     
-    public func updateOrdersStatusCorreios(req: Request, status: Correios.Welcome) async throws {
+    public func updateOrdersStatusCorreios(req: Request, status: Correios.Welcome, userUUID: User.IDValue? = nil) async throws {
         ///Atualiza o status de todas as ordens de acordo com as informações recebidas dos Correios.
         for objeto in status.objetos {
-            guard let order = try await findOrderByCode(req: req, code: objeto.codObjeto) else {
+            guard let order = try await findOrderByCode(req: req, code: objeto.codObjeto, userUUID: userUUID) else {
                 throw Api.OrderError.notFound
             }
             
@@ -66,8 +66,8 @@ final class ModelService {
     }
     
     
-    private func findOrderByCode(req: Request, code: String) async throws -> Order? {
-        let userID = try getAuthenticatedUserID(req)
+    private func findOrderByCode(req: Request, code: String, userUUID: User.IDValue? = nil) async throws -> Order? {
+        let userID: User.IDValue = try userUUID ?? getAuthenticatedUserID(req)
 
         return try await loadRelationshipValues(req: req)
             .join(Product.self, on: \Product.$order.$id == \Order.$id)
@@ -86,6 +86,16 @@ final class ModelService {
             try await updateProductStatus(req: req, product: product, event: evento)
         }
         
+        guard let latestEvent = objeto.eventos
+                .compactMap({ $0.dtHrCriado?.toISO8601Date() })
+                .sorted(by: >)
+                .first,
+              let latestEventData = objeto.eventos.first(where: { $0.dtHrCriado?.toISO8601Date() == latestEvent }) else {
+            return
+        }
+
+        product.deliveryStatus = latestEventData.descricao
+        
         try await product.save(on: req.db)
     }
     
@@ -95,6 +105,8 @@ final class ModelService {
             .filter(\StatusHistory.$product.$id == product.id!)
             .filter(\.$dtCreated == event.dtHrCriado?.toISO8601Date())
             .first()
+        
+//        product.deliveryStatus = event.descricao
         
         if exists == nil {
             try await self.saveStatusHistory(productID: product.id!, req: req, event: event)
@@ -130,3 +142,9 @@ final class ModelService {
         return try req.auth.require(User.self).requireID()
     }
 }
+
+
+//enum TypeRequest {
+//    case internalAcess
+//    case externalAcess
+//}

@@ -132,6 +132,7 @@ struct CreateOrder: @unchecked Sendable {
         let userID = try modelService.getAuthenticatedUserID(req)
         
         try await self.correiosService.verifyAllStatus(req: req, modelService: modelService, userID: userID)
+        
 //        let orders = try await modelService.loadRelationshipValues(req: req)
 //            .filter(\Order.$user.$id == userID)
 //            .all()

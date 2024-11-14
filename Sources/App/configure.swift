@@ -8,6 +8,8 @@ import APNS
 import VaporAPNS
 import APNSCore
 
+import Mailgun
+
 public func configure(_ app: Application) async throws {
     
     if app.environment == .development {
@@ -85,18 +87,18 @@ public func configure(_ app: Application) async throws {
     
     app.queues.schedule(NotificationJob())
         .daily()
-        .at(.midnight)
-    
+        .at(21, 0)
     
     let now = Date()
-    let twoMinutesLater = now.addingTimeInterval(1 * 1) // Adiciona 2 minutos ao horário atual
-
+    let twoMinutesLater = now.addingTimeInterval(1 * 1) 
+    
+    print(twoMinutesLater)
     app.queues.schedule(NotificationJob())
         .at(twoMinutesLater)
     
     await app.jwt.keys.add(hmac: "secret", digestAlgorithm: .sha256)
     app.jwt.apple.applicationIdentifier = "app.TLD-FrontEnd"
-    
+    app.mailgun.configuration = .init(apiKey: "9205d6d96d4257e29e98bdfb1227256e-79295dd0-228e2ab6")
     
     if app.environment == .development {
         try await app.autoMigrate()
