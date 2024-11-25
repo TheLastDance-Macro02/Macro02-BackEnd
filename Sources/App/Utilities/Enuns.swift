@@ -36,13 +36,14 @@ struct Api {
     }
     
     enum Carriers: String {
-        case Correios
-        case Fedex
-        case Aliexpress
-        case Amazon
-        case DHL
-        case MercadoLivre = "mercadolivre"
-        case UPS = "ups"
+        case Correios = "Correios (Brazil Post)"
+//        case Fedex
+//        case Aliexpress
+//        case Amazon
+//        case DHL
+//        case MercadoLivre = "mercadolivre"
+//        case UPS = "ups"
+//        case ALL = "all"
         
         static func from(string: String) -> Carriers? {
             return Carriers(rawValue: string)

@@ -9,12 +9,30 @@ import Vapor
 import Fluent
 
 struct CreateOrder: @unchecked Sendable {
+//    func boot(routes: RoutesBuilder) throws {
+//        let orders = routes.grouped("orders")
+//        orders.get(use: getAllOrders)
+//        orders.post(use: createOrder)
+//        orders.get("status", use: verifyStatusOrders)
+//        orders.delete("deleteAllOrders", use: deleteAllOrders)
+//        orders.delete("deleteOrder", ":id", use: deleteEspecifiqueOrder)
+//        orders.put("updateOrder", ":id", use: updateEspecifiqueOrder)
+//
+//        // Rotas temporárias para gerenciar tokens e notificações de usuários
+//        let users = routes.grouped("users")
+//        users.post("device", "token", use: addTokenDevice)
+//        users.put("allowNotification", use: sendNotification)
+//        users.delete("deleteAllUsers", use: deleteAllUsers)
+//    }
+    
     private let correiosService: CorreiosService
     private let modelService: ModelService
+    private let allCarriers: AllCarriersService
     
-    init (){
-        self.correiosService = CorreiosService()
-        self.modelService = ModelService()
+    init(correiosService: CorreiosService, modelService: ModelService, allCarriers: AllCarriersService = AllCarriersService()){
+        self.correiosService = correiosService
+        self.modelService = modelService
+        self.allCarriers = allCarriers
     }
     
     @Sendable
@@ -32,6 +50,14 @@ struct CreateOrder: @unchecked Sendable {
         } catch {
             throw Abort(.internalServerError, reason: "Failed in getting all orders.")
         }
+    }
+    
+    @Sendable
+    func getAllCarriers(req: Request) async throws -> [AllCarriersDTO]{
+        let carriers = try await ListCarrier.query(on: req.db).all()
+            .map { $0.toDTO() }
+        
+        return carriers
     }
     
     @Sendable
@@ -78,13 +104,11 @@ struct CreateOrder: @unchecked Sendable {
     @Sendable
     func createOrder(req: Request) async throws -> OrderDTO {
         ///Cria uma nova ordem, salva os produtos e retorna a ordem criada com os produtos e histórico.
-        let codeAndName = try req.content.decode(CodeAndName.self)
-        try await verifyCodeInAllCarriers(codeAndName: codeAndName, req: req)
-        let newOrder = try await modelService.saveOrder(req: req)
-        try await modelService.saveProducts(orderID: newOrder.id!, req: req, codeAndName: codeAndName)
+        let newOrderRequest = try req.content.decode(OrderRequest.self)
+        try await verifyCodeInAllCarriers(codeAndName: newOrderRequest, req: req)
         
-        let responseCorreios = try await correiosService.requestData(req: req, urlString: "https://api.correios.com.br/srorastro/v1/objetos/\(codeAndName.code)?resultado=T", modelType: Correios.Welcome.self)
-        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        let newOrder = try await creatNewOrder(codeAndName: newOrderRequest, req)
+        try await requestDataInCarrier(req, newOrderRequest)
         
         return try await Order.query(on: req.db)
             .filter(\.$id == newOrder.id!)
@@ -95,29 +119,35 @@ struct CreateOrder: @unchecked Sendable {
             .toDTO()
     }
     
+    private func requestDataInCarrier(_ req: Request, _ orderRequest: OrderRequest) async throws {
+        let carrier = Api.Carriers.from(string: orderRequest.carrier)
+        switch carrier {
+        case .Correios:
+            let responseCorreios = try await correiosService.requestData(req: req, urlString: "https://api.correios.com.br/srorastro/v1/objetos/\(orderRequest.code)?resultado=T", modelType: Correios.Welcome.self)
+            try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        default:
+            let body = BodyHandler(trackingCode: orderRequest.code, courierCode: orderRequest.carrier)
+            let bodyEncodede = try JSONEncoder().encode(body)
+            let response = try await self.allCarriers.requestData(req: req, body: bodyEncodede, modelType: AllCarriers.Welcome.self)
+            try await modelService.updateOrdersStatusAllCarriers(req: req, status: response)
+        }
+    }
     
     
-    private func verifyCodeInAllCarriers(codeAndName: CodeAndName, req: Request) async throws {
-        try await correiosService.verifyCode(code: codeAndName.code, req: req)
-//        let carrier = Api.Carriers.from(string: codeAndName.carrier)
-//        switch carrier {
-//        case .Correios:
-//            
-//        case .Fedex:
-//            print("Chamando Fedex")
-//        case .Aliexpress:
-//            print("Chamando Aliexpress")
-//        case .Amazon:
-//            print("Chamando Amazon")
-//        case .DHL:
-//            print("Chamando DHL")
-//        case .MercadoLivre:
-//            print("Chamando MercadoLivre")
-//        case .UPS:
-//            print("Chamando UPS")
-//        case nil:
-//            print("Deu nill")
-//        }
+    private func creatNewOrder(codeAndName: OrderRequest, _ req: Request) async throws -> Order {
+        let newOrder = try await modelService.saveOrder(req: req)
+        try await modelService.saveProducts(orderID: newOrder.id!, req: req, codeAndName: codeAndName)
+        return newOrder
+    }
+    
+    private func verifyCodeInAllCarriers(codeAndName: OrderRequest, req: Request) async throws {
+        let carrier = Api.Carriers.from(string: codeAndName.carrier)
+        switch carrier {
+        case .Correios:
+            try await correiosService.verifyCode(code: codeAndName.code, req: req)
+        default:
+            try await allCarriers.verifyCode(requestOrder: codeAndName, req: req)
+        }
     }
     
     @Sendable
@@ -131,26 +161,19 @@ struct CreateOrder: @unchecked Sendable {
     func verifyStatusOrders(req: Request) async throws -> [OrderDTO] {
         let userID = try modelService.getAuthenticatedUserID(req)
         
-        try await self.correiosService.verifyAllStatus(req: req, modelService: modelService, userID: userID)
-        
-//        let orders = try await modelService.loadRelationshipValues(req: req)
-//            .filter(\Order.$user.$id == userID)
-//            .all()
-//        
-//        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
-//        
-//        let urlString = try await correiosService.makeURl(from: orders)
-//        if urlString.contains("ERROR") {
-//            return orders.map { $0.toDTO() }
-//        }
-//        
-//        let responseCorreios = try await correiosService.requestData(req: req, urlString: urlString, modelType: Correios.Welcome.self)
-//        try await modelService.updateOrdersStatusCorreios(req: req, status: responseCorreios)
+        try await self.verifyAllStatus(req: req, modelService: modelService, userID: userID)
         
         return try await modelService.loadRelationshipValues(req: req)
             .filter(\Order.$user.$id == userID)  
             .all()
             .map { $0.toDTO() }
+    }
+    
+    private func verifyAllStatus(req: Request, modelService: ModelService, userID: User.IDValue) async throws {
+        //verificar correios primeiro
+        try await self.correiosService.verifyAllStatus(req: req, modelService: modelService, userID: userID)
+        //verificar 139 api depois
+        try await self.allCarriers.verifyAllStatus(req: req, modelService: modelService, userID: userID)
     }
     
     
@@ -178,8 +201,6 @@ struct CreateOrder: @unchecked Sendable {
         if user.sendNotification == nil{
             user.sendNotification = true
         }
-        
-//        user.sendNotification = user.t
         
         do{
             try await user.save(on: req.db)

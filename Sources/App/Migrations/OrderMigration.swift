@@ -5,7 +5,6 @@
 //  Created by Gustavo Horestee Santos Barros on 24/09/24.
 //
 
-
 import Fluent
 
 struct OrderMigration: AsyncMigration {

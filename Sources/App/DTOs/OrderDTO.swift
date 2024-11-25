@@ -39,8 +39,8 @@ struct OrderDTO: Content {
    }
 }
 
-struct CodeAndName: Content {
+struct OrderRequest: Content {
     var code: String
     var name: String
-//    var carrier: String
+    var carrier: String
 }

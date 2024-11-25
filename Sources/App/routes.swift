@@ -4,7 +4,10 @@ import Fluent
 import Vapor
 
 func routes(_ app: Application) throws {
-    let createOrder = CreateOrder()
+    let correiosService: CorreiosService = CorreiosService()
+    let modelService: ModelService = ModelService()
+    
+    let createOrder = CreateOrder(correiosService: correiosService, modelService: modelService)
     let createUser = CreateUser()
     let createUserApple = CreateUserToken()
     

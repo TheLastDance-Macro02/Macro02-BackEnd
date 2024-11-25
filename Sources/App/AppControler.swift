@@ -23,6 +23,7 @@ enum App{
                 routes.delete("orders", "deleteAllOrders", use: createOrder.deleteAllOrders)
                 routes.delete("orders", "deleteOrder", ":id", use: createOrder.deleteEspecifiqueOrder)
                 routes.put("orders", "updateOrder", ":id", use: createOrder.updateEspecifiqueOrder)
+                routes.get("orders", "allCarriers", use: createOrder.getAllCarriers)
                 
                 //mudar depois essas rotas
                 routes.post("users", "device", "token", use: createOrder.addTokenDevice)

@@ -79,6 +79,7 @@ public func configure(_ app: Application) async throws {
     app.migrations.add(ProductMigration())
     app.migrations.add(StatusHistoryMigration())
     app.migrations.add(AddFieldsToUser())
+    app.migrations.add(ListCarrieMigration())
     
     
     app.queues.schedule(NotificationJob())
@@ -90,10 +91,10 @@ public func configure(_ app: Application) async throws {
         .at(21, 0)
     
     let now = Date()
-    let twoMinutesLater = now.addingTimeInterval(1 * 1) 
+    let twoMinutesLater = now.addingTimeInterval(1 * 10) 
     
     print(twoMinutesLater)
-    app.queues.schedule(NotificationJob())
+    app.queues.schedule(GetCarriersJob())
         .at(twoMinutesLater)
     
     await app.jwt.keys.add(hmac: "secret", digestAlgorithm: .sha256)

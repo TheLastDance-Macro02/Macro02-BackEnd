@@ -15,10 +15,12 @@ import APNSCore
 struct NotificationController: @unchecked Sendable{
     private let correiosService: CorreiosService
     private let modelService: ModelService
+    private let allCarriers: AllCarriersService
     
     init (){
         self.correiosService = CorreiosService()
         self.modelService = ModelService()
+        self.allCarriers = AllCarriersService()
     }
     
     public func sendNotification(context: QueueContext) async throws {
@@ -74,6 +76,8 @@ struct NotificationController: @unchecked Sendable{
             .all()
         
         try await self.correiosService.verifyAllStatus(req: fakeRequest, modelService: self.modelService, userID: user.requireID())
+        
+//        try await self.allCarriers.verifyAllStatus(req: fakeRequest, modelService: self.modelService, userID: user.requireID())
         
         let newOrders = try await modelService.loadRelationshipValues(req: fakeRequest)
             .filter(\Order.$user.$id == user.requireID())

@@ -14,11 +14,9 @@ import Fluent
 ///"https://api.correios.com.br/srorastro/v1/objetos?\(code)&resultado=T"  -> Requisitar varios produtos: [Codes]
 ///"https://api.correios.com.br/token/v1/autentica/cartaopostagem" -> Resquisitar tokem de acesso
 class CorreiosService: ApiService{
-
-    
     func makeURl(from orders: [Order]) async throws -> String{
         let filteredProductCodes = orders.filter { !$0.isFinished }.flatMap { $0.products.map { $0.code } }
-        if filteredProductCodes.count > 50 { return "" } ///Iso vai da bo se o cara cadastrar mais de 50 produtos 😀
+        if filteredProductCodes.count > 50 { return "ERROR" } ///Iso vai da bo se o cara cadastrar mais de 50 produtos 😀
         let queryCodigos = filteredProductCodes.map { "codigosObjetos=\($0)" }.joined(separator: "&")
         if queryCodigos.isEmpty { return "ERROR" }
         return "https://api.correios.com.br/srorastro/v1/objetos?\(queryCodigos)&resultado=T"
@@ -77,9 +75,21 @@ class CorreiosService: ApiService{
             .filter(\Order.$user.$id == userID)
             .all()
         
-        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
+//        print("Antes", orders.count)
         
-        let urlString = try await self.makeURl(from: orders)
+        let correiosOrders = orders.compactMap { order in
+            if order.products.contains(where: { $0.deliveryCompany == "Correios" }) {
+                return order
+            }
+            return nil
+        }
+        
+//        print("Depois", correiosOrders.count)
+        
+        guard !orders.isEmpty else { throw Api.OrderError.notExistCodes }
+        guard !correiosOrders.isEmpty else { return }
+        
+        let urlString = try await self.makeURl(from: correiosOrders)
         
         if urlString.contains("ERROR") {
 //            return orders.map { $0.toDTO() }

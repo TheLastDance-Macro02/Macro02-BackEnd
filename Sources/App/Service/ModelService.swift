@@ -17,12 +17,13 @@ final class ModelService {
         return newOrder
     }
     
-    public func saveProducts(orderID: Order.IDValue, req: Request, codeAndName: CodeAndName) async throws {
+    public func saveProducts(orderID: Order.IDValue, req: Request, codeAndName: OrderRequest) async throws {
         /// Salva os produtos associados a uma ordem no banco de dados.
         let newProduct = Product(
             name: codeAndName.name,
             code: codeAndName.code,
-            orderID: orderID
+            orderID: orderID,
+            deliveryCompany: codeAndName.carrier
         )
         try await newProduct.save(on: req.db)
         
@@ -31,7 +32,6 @@ final class ModelService {
     
     public func saveStatusHistory(productID: Product.IDValue, req: Request, event: Correios.Evento? = nil) async throws {
         /// Salva o histórico de status associado a um produto no banco de dados.
-        
         let newStatusHistory = StatusHistory(
             historyDate: event?.dtHrCriado ?? Date().toISO8601String(),
             productID: productID,
@@ -45,7 +45,6 @@ final class ModelService {
             complement: event?.unidade?.endereco.complemento,
             district: event?.unidade?.endereco.bairro
         )
-        
         try await newStatusHistory.save(on: req.db)
     }
     
@@ -65,10 +64,77 @@ final class ModelService {
         }
     }
     
+    public func updateOrdersStatusAllCarriers(req: Request, status: AllCarriers.Welcome, userUUID: User.IDValue? = nil) async throws {
+        ///Atualiza o status de todas as ordens de acordo com as informações recebidas dos Correios.
+//        for objeto in status.data {
+        let data = status.data
+        guard let order = try await findOrderByCode(req: req, code: data.trackingNumber, userUUID: userUUID) else {
+                throw Api.OrderError.notFound
+            }
+            
+            let products = try await order.$products.get(on: req.db)
+        
+            for product in products {
+                try await updateProductAllCarriers(req: req, product: product, objeto: data)
+            }
+            
+            try await order.save(on: req.db)
+//        }
+    }
+    
+    private func updateProductAllCarriers(req: Request, product: Product, objeto: AllCarriers.DataClass) async throws {
+        ///Atualiza informações do produto com base nos dados do objeto dos Correios.
+//        product.deliveryCompany = objeto.tipoPostal?.categoria// nao precisa ja salvei
+//        product.dtPredicted = objeto.dtPrevista?.toISO8601Date() ?? nil
+        
+        for evento in objeto.events {
+            try await updateProductStatusAllCarriers(req: req, product: product, event: evento)
+        }
+        
+        guard let latestEvent = objeto.events
+            .compactMap({ $0.datetime.toISO8601Date() })
+                .sorted(by: >)
+                .first,
+              let latestEventData = objeto.events.first(where: { $0.datetime.toISO8601Date() == latestEvent }) else {
+            return
+        }
+
+        product.deliveryStatus = latestEventData.status
+        
+        try await product.save(on: req.db)
+    }
+
+    private func updateProductStatusAllCarriers(req: Request, product: Product, event: AllCarriers.Event) async throws {
+        ///Verifica se o evento já existe no histórico do produto. Se não existir, cria um novo.
+        let exists = try await StatusHistory.query(on: req.db)
+            .filter(\StatusHistory.$product.$id == product.id!)
+            .filter(\.$dtCreated == event.datetime.toISO8601Date())
+            .first()
+        
+//        product.deliveryStatus = event.descricao
+        
+        if exists == nil {
+            try await self.saveStatusHistoryAllCarriers(productID: product.id!, req: req, event: event)
+        } else {
+            print("Evento já existe para o produto \(product.id!) - \(product.name) - \(product.code)")
+        }
+    }
+    
+    public func saveStatusHistoryAllCarriers(productID: Product.IDValue, req: Request, event: AllCarriers.Event? = nil) async throws {
+        /// Salva o histórico de status associado a um produto no banco de dados.
+        let newStatusHistory = StatusHistory(
+            historyDate: event?.datetime ?? Date().toISO8601String(),
+            productID: productID,
+            description: event?.status ?? "Codigo adicionado ao App",
+            city: event?.location
+        )
+        try await newStatusHistory.save(on: req.db)
+    }
+    
     
     private func findOrderByCode(req: Request, code: String, userUUID: User.IDValue? = nil) async throws -> Order? {
         let userID: User.IDValue = try userUUID ?? getAuthenticatedUserID(req)
-
+        
         return try await loadRelationshipValues(req: req)
             .join(Product.self, on: \Product.$order.$id == \Order.$id)
             .filter(Product.self, \.$code == code)
@@ -129,7 +195,7 @@ final class ModelService {
             throw Abort(.conflict, reason: "As senhas não conferem")
         }
         
-        if let existingUser = try await User.query(on: req.db).filter(\.$email == user.email).first() {
+        if let _ = try await User.query(on: req.db).filter(\.$email == user.email).first() {
             throw Abort(.conflict, reason: "O e-mail já está cadastrado")
         }
         
