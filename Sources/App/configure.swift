@@ -90,12 +90,12 @@ public func configure(_ app: Application) async throws {
         .daily()
         .at(21, 0)
     
-    let now = Date()
-    let twoMinutesLater = now.addingTimeInterval(1 * 10) 
-    
-    print(twoMinutesLater)
-    app.queues.schedule(GetCarriersJob())
-        .at(twoMinutesLater)
+//    let now = Date()
+//    let twoMinutesLater = now.addingTimeInterval(1 * 10) 
+//    
+//    print(twoMinutesLater)
+//    app.queues.schedule(GetCarriersJob())
+//        .at(twoMinutesLater)
     
     await app.jwt.keys.add(hmac: "secret", digestAlgorithm: .sha256)
     app.jwt.apple.applicationIdentifier = "app.TLD-FrontEnd"
