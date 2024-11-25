@@ -22,7 +22,6 @@ public func configure(_ app: Application) async throws {
             tls: .prefer(try .init(configuration: .clientDefault)))
         ), as: .psql)
     }else{
-        
         if let databaseURL = Environment.get("DATABASE_URL") {
             var tlsConfig: TLSConfiguration = .makeClientConfiguration()
             tlsConfig.certificateVerification = .none
